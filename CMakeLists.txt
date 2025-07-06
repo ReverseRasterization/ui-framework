@@ -20,10 +20,13 @@ add_executable(main
                     src/main.cpp 
 
                     src/ui/alignment.cpp
+                    src/ui/element.h
                     
                     src/ui/frame.cpp
                     src/ui/button.cpp
-                    src/ui/element.h
+                    src/ui/textbox.cpp
+
+                    
 )
 
 add_custom_command(TARGET main POST_BUILD

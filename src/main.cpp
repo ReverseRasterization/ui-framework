@@ -28,8 +28,7 @@ int main()
     frame.setOutline(Outline(10.f, sf::Color::Blue));
     frame.setAlignment(CENTER);
 
-    Button* button = new Button({100.f, 100.f}, NIL_ALIGNMENT, Button::Text("Hello, world!", &font));
-    // Button* button = new Button({100.f, 100.f}, NIL_ALIGNMENT, std::nullopt, Button::Texture(&buttonSet, {64, 0}, {32, 32}));
+    Button* button = new Button({100.f, 100.f}, NIL_ALIGNMENT, std::nullopt, Button::Texture(&buttonSet, {64, 0}, {32, 32}));
     button->setOutline(Outline(5.f, sf::Color::Black));
     button->setAlignment(CENTER);
 

@@ -1,9 +1,5 @@
 #pragma once
 
-#include <SFML/Graphics.hpp>
-
-#include "alignment.h"
-#include "outline.h"
 #include "element.h"
 
 class Button : public Element
