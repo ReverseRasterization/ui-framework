@@ -1,11 +1,22 @@
-#include "ui.h"
+#include "frame.h"
 #include <algorithm>
+#include <iostream>
 
 Frame::Frame(sf::RenderWindow* window, sf::Color color):
     m_rect({0.f, 0.f}),
     m_window(window)
 {
     m_rect.setFillColor(color);
+}
+
+void Frame::draw(sf::RenderWindow& window)
+{
+    window.draw(m_rect);
+
+    for (Element* child : children)
+    {
+        child->draw(window);
+    }
 }
 
 void Frame::setSize(sf::Vector2f new_size)
@@ -52,6 +63,8 @@ void Frame::setOutline(Outline outline)
 
 void Frame::onWindowResized()
 {
+    // First, resize the frame
+
     sf::Vector2f nSize = (sf::Vector2f) m_window->getSize();
 
     /*
@@ -75,4 +88,27 @@ void Frame::onWindowResized()
 
     if(m_alignment != NIL_ALIGNMENT) {setAlignment(m_alignment);}
 
+    // Then, children
+
+    for (Element* child : children)
+    {
+        child->setSize({
+            (rectSize.x * scale) * (child->getSize().x/rectSize.x),
+            (rectSize.y * scale) * (child->getSize().y/rectSize.y)
+        });
+
+        child->setPosition(
+            
+            getPosInSpace(rectSize * scale, child->getSize(), m_rect.getPosition(), child->getAlignment(), child->getOutlineSize())
+        );
+    };
+
+}
+
+void Frame::addChild(Element* child)
+{
+    children.push_back(child);
+    child->setPosition(
+        getPosInSpace(m_rect.getSize(), child->getSize(), m_rect.getPosition(), child->getAlignment(), child->getOutlineSize())
+    );
 }

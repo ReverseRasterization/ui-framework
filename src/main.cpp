@@ -1,19 +1,39 @@
 #include <iostream>
 
 #include <SFML/Graphics.hpp>
-#include "ui/ui.h"
+
+#include "ui/frame.h"
+#include "ui/button.h"
 
 int main()
 {
     sf::RenderWindow window(sf::VideoMode({800, 800}), "UI Framework Test");
+
+    sf::Font font;
+    if (!font.openFromFile("assets/font.ttf"))
+    {
+        std::cerr << "Failed to load font!\n";
+        return -1;
+    }
+
+    sf::Texture buttonSet;
+    if(!buttonSet.loadFromFile("assets/uicons.png"))
+    {
+        std::cerr << "Failed to load uicons tileset!";
+        return -1;
+    }
 
     Frame frame(&window);
     frame.setSize({500.f, 300.f});
     frame.setOutline(Outline(10.f, sf::Color::Blue));
     frame.setAlignment(CENTER);
 
-    Button button(frame);
-    button.setAlignment(CENTER);
+    Button* button = new Button({100.f, 100.f}, NIL_ALIGNMENT, Button::Text("Hello, world!", &font));
+    // Button* button = new Button({100.f, 100.f}, NIL_ALIGNMENT, std::nullopt, Button::Texture(&buttonSet, {64, 0}, {32, 32}));
+    button->setOutline(Outline(5.f, sf::Color::Black));
+    button->setAlignment(CENTER);
+
+    frame.addChild(button);
 
     while (window.isOpen())
     {
@@ -39,6 +59,8 @@ int main()
 
         window.display();
     }
+
+    delete button;
 
     return 0;
 }

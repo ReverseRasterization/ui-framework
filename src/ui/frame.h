@@ -1,28 +1,20 @@
 #pragma once
 
-#include <iostream>
-#include <vector>
-#include <variant>
+#include <memory>
 
 #include <SFML/Graphics.hpp>
 #include "alignment.h"
+#include "outline.h"
 
-struct Outline
-{
-    float o_thickness;
-    sf::Color o_color;
+#include "element.h"
 
-    Outline(float thickness, sf::Color color): o_thickness(thickness), o_color(color){}
-};
+class Button;
 
 class Frame
 {
     public:
 
-        void draw(sf::RenderWindow& window)
-        {
-            window.draw(m_rect);
-        }
+        void draw(sf::RenderWindow& window);
 
         Frame(sf::RenderWindow* window, sf::Color color = sf::Color::White);
 
@@ -32,6 +24,8 @@ class Frame
 
         void setOutline(Outline outline);
         void setAlignment(Alignment alignment);
+
+        void addChild(Element* child);
 
         sf::Vector2f getPosition(){return m_rect.getPosition();}
         sf::Vector2f getSize(){return m_rect.getSize();}
@@ -49,32 +43,7 @@ class Frame
         Outline m_outline {0.f, sf::Color::Black};
 
         sf::Vector2f sizeScale;
-        float outlineScale;
         float aspectRatio;
+
+        std::vector<Element*> children;
 };
-
-class Button
-{
-    public:
-
-        void draw(sf::RenderWindow& window)
-        {
-            window.draw(m_rect);
-        }
-
-        Button(Frame& parent): m_parent(parent){}
-
-        // TODO: setSize() function
-
-        void setOutline(Outline outline);
-        void setAlignment(Alignment alignment);
-
-    private:
-        sf::RectangleShape m_rect;
-
-        Alignment m_alignment = NIL_ALIGNMENT;
-        Outline m_outline {0.f, sf::Color::Black};
-
-        Frame& m_parent;
-};
-
