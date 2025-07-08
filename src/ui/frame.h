@@ -6,7 +6,7 @@
 #include "alignment.h"
 #include "outline.h"
 
-#include "element.h"
+#include "elements/element.h"
 
 class Button;
 

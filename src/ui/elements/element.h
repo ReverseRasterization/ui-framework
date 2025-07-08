@@ -1,10 +1,11 @@
 #pragma once
 
 #include <SFML/Graphics.hpp>
+
 #include <iostream>
 
-#include "alignment.h"
-#include "outline.h"
+#include "../alignment.h"
+#include "../outline.h"
 
 class Element
 {

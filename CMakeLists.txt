@@ -20,11 +20,12 @@ add_executable(main
                     src/main.cpp 
 
                     src/ui/alignment.cpp
-                    src/ui/element.h
                     
                     src/ui/frame.cpp
-                    src/ui/button.cpp
-                    src/ui/textbox.cpp
+
+                    src/ui/elements/element.h
+                    src/ui/elements/button.cpp
+                    src/ui/elements/textbox.cpp
 
                     
 )

@@ -3,7 +3,8 @@
 #include <SFML/Graphics.hpp>
 
 #include "ui/frame.h"
-#include "ui/button.h"
+#include "ui/elements/button.h"
+#include "ui/elements/textbox.h"
 
 int main()
 {
@@ -32,7 +33,18 @@ int main()
     button->setOutline(Outline(5.f, sf::Color::Black));
     button->setAlignment(CENTER);
 
+    Textbox* textbox = new Textbox("Hello, world!", &font);
+    textbox->setOutline(Outline(5.f, sf::Color::Black));
+    textbox->setAlignment(TOP_CENTER);
+    textbox->toggleMutability(true);
+    textbox->setBackgroundColor(sf::Color::Black);
+
     frame.addChild(button);
+    frame.addChild(textbox);
+
+    sf::CircleShape dot(3.f);
+    dot.setFillColor(sf::Color::Red);
+    dot.setOrigin({3.f, 3.f});
 
     while (window.isOpen())
     {
@@ -50,11 +62,18 @@ int main()
 
                 frame.onWindowResized();
             }
+
+            if (event->is<sf::Event::MouseButtonPressed>())
+            {
+                dot.setPosition((sf::Vector2f) sf::Mouse::getPosition());
+                textbox->handleClick(window.mapPixelToCoords(sf::Mouse::getPosition()));
+            }
         }
 
         window.clear();
 
         frame.draw(window);
+        window.draw(dot);
 
         window.display();
     }
