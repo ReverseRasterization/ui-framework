@@ -77,13 +77,19 @@ int main()
         std::cout << "Clicked! \n";
     };
 
-    Textbox* textbox = new Textbox("Hello, world!", &font);
+    Textbox* textbox = new Textbox("Edit me", &font);
     textbox->setOutline(Outline(5.f, sf::Color::Black));
     textbox->setAlignment(TOP_CENTER);
     textbox->toggleMutability(true);
+    textbox->setRule(Textbox::Rule::ANY);
+
+    Textbox* textbox2 = new Textbox("DONT edit me", &font);
+    textbox2->setAlignment(BOTTOM_CENTER);
+    textbox2->setBackgroundColor(sf::Color::Cyan);
 
     frame.addChild(button);
     frame.addChild(textbox);
+    frame.addChild(textbox2);
 
     Textbox* currTextbox {nullptr};
 
@@ -131,8 +137,6 @@ int main()
             {
                 sf::Vector2f mousePos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
 
-                if (!frame.getGlobalBounds().contains(mousePos)) continue;
-
                 iElement target = getInteractiveFromPosition(window.mapPixelToCoords(sf::Mouse::getPosition(window)), frame);
 
                 if (currTextbox && currTextbox != target.element)
@@ -158,6 +162,16 @@ int main()
                     target.txbx->handleClick();
                 }
             }
+
+            if(const auto* textEntered = event->getIf<sf::Event::TextEntered>())
+            {
+
+                if (currTextbox && textEntered->unicode < 128)
+                {
+                    currTextbox->handleKey(textEntered->unicode);
+                }
+            }
+
         }
 
         window.clear();
