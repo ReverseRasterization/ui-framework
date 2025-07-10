@@ -112,3 +112,16 @@ void Frame::addChild(Element* child)
         getPosInSpace(m_rect.getSize(), child->getSize(), m_rect.getPosition(), child->getAlignment(), child->getOutlineSize())
     );
 }
+
+Element* Frame::getChildFromPosition(sf::Vector2f position)
+{
+    for (Element* child : children)
+    {
+        if (child->getGlobalBounds().contains(position))
+        {
+            return child;
+        }
+    }
+
+    return nullptr;
+}

@@ -15,6 +15,7 @@ class Textbox: public Element
         sf::Vector2f getSize() {return m_background.getSize();}
 
         void setPosition(sf::Vector2f new_position);
+        sf::FloatRect getGlobalBounds() {return m_background.getGlobalBounds();}
 
         void setBackgroundColor(sf::Color color) {m_background.setFillColor(color);}
 
@@ -24,13 +25,14 @@ class Textbox: public Element
         // setAlignment and getAlignment are here from the Elements class
 
         void toggleMutability(bool toggle) {isMutable = true;}
+        bool isInteractive(){return isMutable;}
 
         void setString(std::string new_string);
         std::string getString(){return m_text_contents;}
 
-        void handleClick(sf::Vector2f mousePos);
+        void handleClick();
+        void clickOff();
         
-
         Textbox(
             std::string text, 
             sf::Font* font, 

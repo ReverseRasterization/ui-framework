@@ -2,6 +2,8 @@
 
 #include "element.h"
 
+#include <functional>
+
 class Button : public Element
 {
     public:
@@ -51,6 +53,7 @@ class Button : public Element
         );
 
         void setPosition(sf::Vector2f new_position);
+        sf::FloatRect getGlobalBounds(){return m_rect.getGlobalBounds();}
 
         void setSize(sf::Vector2f new_size);
         sf::Vector2f getSize(){return m_rect.getSize();}
@@ -60,10 +63,13 @@ class Button : public Element
 
         void setText(std::string new_text);
         void setTexture(Texture new_texture);
+        
+        void toggle(bool enabled) {active = enabled;}
+        bool isActive() {return active;} 
+
+        std::function<void()> onClick;
 
         Alignment getAlignment() {return m_alignment;}
-
-        bool clicked (sf::Vector2i mouse_pos){return m_rect.getGlobalBounds().contains((sf::Vector2f) mouse_pos);}
 
     private:
         sf::RectangleShape m_rect;
@@ -76,4 +82,6 @@ class Button : public Element
         Outline m_outline {0.f, sf::Color::Black};
 
         void adjustText(bool overrideFitting = false);
+
+        bool active = true;
 };

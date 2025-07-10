@@ -46,6 +46,8 @@ Textbox::Textbox
     m_text.setFillColor(fill_color);
     m_text.setOutlineColor(outline_color);
     m_text.setOutlineThickness(outline_thickness);
+
+    setType(T_TXBX);
 }           
 
 void Textbox::setOutline(Outline outline)
@@ -76,35 +78,22 @@ void Textbox::setString(std::string new_string)
     adjustText();
 }
 
-void Textbox::handleClick(sf::Vector2f mousePos)
+void Textbox::handleClick()
 {
-    if (!isMutable){return;}
+    if (!isMutable || selected){return;}
 
     sf::Color currColor = m_background.getFillColor();
+    
+    selected = true;
 
-    sf::Vector2f bgPos = m_background.getPosition();
-    sf::Vector2f bgSize = m_background.getSize();
+    std::cout << "Textbox Active\n";
+}
 
-    bool inBounds = mousePos.x > bgPos.x &&
-                    mousePos.x < bgPos.x + bgSize.x &&
-                    mousePos.y > bgPos.y &&
-                    mousePos.y < bgPos.y + bgSize.y;
+void Textbox::clickOff()
+{
+    if (!selected){return;}
 
+    selected = false;
 
-    if (inBounds)
-    {
-        if (selected) {return;}
-
-        selected = true;
-
-        std::cout << "deez nuts bitch\n";
-    }else{
-        if (!selected){return;}
-
-        std::cout << "no!!!\n";
-
-        selected = false;
-    }
-
-
+    std::cout << "Textbox not active\n";
 }

@@ -26,8 +26,10 @@ class Frame
         void setAlignment(Alignment alignment);
 
         void addChild(Element* child);
+        Element* getChildFromPosition(sf::Vector2f position);
 
         sf::Vector2f getPosition(){return m_rect.getPosition();}
+        sf::FloatRect getGlobalBounds(){return m_rect.getGlobalBounds();}
         sf::Vector2f getSize(){return m_rect.getSize();}
 
         void onWindowResized();

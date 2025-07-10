@@ -47,6 +47,8 @@ Button::Button(sf::Vector2f size, Alignment alignment, std::optional<Text> butto
     }else {
         m_rect.setFillColor(button_color);
     }
+
+    setType(T_BTN);
 }
 
 
