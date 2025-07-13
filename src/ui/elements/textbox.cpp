@@ -73,6 +73,8 @@ void Textbox::setOutline(Outline outline)
 
 void Textbox::setSize(sf::Vector2f new_size)
 {
+    m_background.setOutlineThickness(m_outline.adjust(new_size));
+
     m_background.setSize(new_size);
     adjustText();
 }

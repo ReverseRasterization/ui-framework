@@ -22,6 +22,7 @@ void Frame::draw(sf::RenderWindow& window)
 void Frame::setSize(sf::Vector2f new_size)
 {
     m_rect.setSize(new_size);
+    m_rect.setOutlineThickness(m_outline.adjust(new_size));
 
     sf::Vector2f windowSize = (sf::Vector2f) m_window->getSize();
 
@@ -84,7 +85,7 @@ void Frame::onWindowResized()
     float scale = std::min(projectedRectSize.x / rectSize.x, projectedRectSize.y / rectSize.y);
 
     m_rect.setSize(rectSize*scale);
-    m_rect.setOutlineThickness(m_outline.o_thickness *= scale);
+    m_rect.setOutlineThickness(m_outline.adjust(rectSize*scale));
 
     if(m_alignment != NIL_ALIGNMENT) {setAlignment(m_alignment);}
 

@@ -39,7 +39,7 @@ class Element
     private:
 
         Alignment m_alignment = NIL_ALIGNMENT;
-        Outline m_outline {0.f, sf::Color::Black};
+        Outline m_outline {0.f, sf::Color::Black, {0.f, 0.f}};
 
         Type type;
 

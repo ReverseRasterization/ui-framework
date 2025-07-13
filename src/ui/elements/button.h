@@ -59,7 +59,7 @@ class Button : public Element
         sf::Vector2f getSize(){return m_rect.getSize();}
 
         void setOutline(Outline outline);
-        float getOutlineSize() {return m_outline.o_thickness;}
+        float getOutlineSize() {return m_outline.getThickness();}
 
         void setText(std::string new_text);
         void setTexture(Texture new_texture);
@@ -79,7 +79,7 @@ class Button : public Element
         std::optional<Texture> btnTexture;
 
         Alignment m_alignment = NIL_ALIGNMENT;
-        Outline m_outline {0.f, sf::Color::Black};
+        Outline m_outline {0.f, sf::Color::Black, {0.f, 0.f}};
 
         void adjustText(bool overrideFitting = false);
 

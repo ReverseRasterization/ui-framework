@@ -51,11 +51,11 @@ Button::Button(sf::Vector2f size, Alignment alignment, std::optional<Text> butto
     setType(T_BTN);
 }
 
-
-
 void Button::setSize(sf::Vector2f new_size)
 {
+    m_rect.setOutlineThickness(m_outline.adjust(new_size));
     m_rect.setSize(new_size);
+    
     adjustText();
 }
 

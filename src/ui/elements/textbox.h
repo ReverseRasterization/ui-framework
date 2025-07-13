@@ -27,7 +27,7 @@ class Textbox: public Element
         void setBackgroundColor(sf::Color color) {m_background.setFillColor(color); m_background_color = color;}
 
         void setOutline(Outline outline);
-        float getOutlineSize(){return m_outline.o_thickness;};
+        float getOutlineSize(){return m_outline.getThickness();};
 
         // setAlignment and getAlignment are here from the Elements class
 
@@ -59,12 +59,11 @@ class Textbox: public Element
     private:
 
         // m_alignment is here from the Elements class
-        Outline m_outline{0.f, sf::Color::Black};
+        Outline m_outline{0.f, sf::Color::Black, {0.f, 0.f}};
 
         sf::RectangleShape m_background;
         sf::Color m_background_color;
         sf::Text m_text;
-
 
         std::string m_text_contents;
 

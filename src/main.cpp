@@ -67,23 +67,24 @@ int main()
 
     Frame frame(&window);
     frame.setSize({500.f, 300.f});
-    frame.setOutline(Outline(10.f, sf::Color::Blue));
+    frame.setOutline(Outline(10.f, sf::Color::Blue, {500.f, 300.f}));
     frame.setAlignment(CENTER);
 
     Button* button = new Button({100.f, 100.f}, NIL_ALIGNMENT, std::nullopt, Button::Texture(&buttonSet, {64, 0}, {32, 32}));
-    button->setOutline(Outline(5.f, sf::Color::Black));
+    button->setOutline(Outline(5.f, sf::Color::Black, {100.f, 100.f}));
     button->setAlignment(CENTER);
     button->onClick = []() {
         std::cout << "Clicked! \n";
     };
 
     Textbox* textbox = new Textbox("Edit me", &font);
-    textbox->setOutline(Outline(5.f, sf::Color::Black));
+    textbox->setOutline(Outline(5.f, sf::Color::Black, {100.f, 25.f}));
     textbox->setAlignment(TOP_CENTER);
     textbox->toggleMutability(true);
     textbox->setRule(Textbox::Rule::ANY);
 
     Textbox* textbox2 = new Textbox("DONT edit me", &font);
+    textbox2->setOutline(Outline(2.f, sf::Color::Black, textbox2->getSize()));
     textbox2->setAlignment(BOTTOM_CENTER);
     textbox2->setBackgroundColor(sf::Color::Cyan);
 

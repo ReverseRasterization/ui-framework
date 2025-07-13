@@ -20,6 +20,7 @@ add_executable(main
                     src/main.cpp 
 
                     src/ui/alignment.cpp
+                    src/ui/outline.h
                     
                     src/ui/frame.cpp
 
