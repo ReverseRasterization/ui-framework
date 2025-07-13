@@ -1,4 +1,5 @@
 #include <iostream>
+#include <format>
 
 #include <SFML/Graphics.hpp>
 
@@ -49,6 +50,8 @@ iElement getInteractiveFromPosition(sf::Vector2f pos, Frame& active_frame);
 
 int main()
 {
+    int money = 0;
+
     sf::RenderWindow window(sf::VideoMode({800, 800}), "UI Framework Test");
 
     sf::Font font;
@@ -70,27 +73,22 @@ int main()
     frame.setOutline(Outline(10.f, sf::Color::Blue, {500.f, 300.f}));
     frame.setAlignment(CENTER);
 
-    Button* button = new Button({100.f, 100.f}, NIL_ALIGNMENT, std::nullopt, Button::Texture(&buttonSet, {64, 0}, {32, 32}));
-    button->setOutline(Outline(5.f, sf::Color::Black, {100.f, 100.f}));
+    Textbox* moneyCount = new Textbox("Money: $0", &font);
+    moneyCount->setSize({frame.getSize().x, 25.f});
+    moneyCount->setAlignment(TOP_CENTER);
+
+    Button* button = new Button({100.f, 25.f}, NIL_ALIGNMENT, Button::Text("Click for money!", &font, 4, sf::Color::Black));
+    button->setBackgroundColor(sf::Color::Green);
+    button->setOutline(Outline(5.f, sf::Color::Black, button->getSize()));
     button->setAlignment(CENTER);
-    button->onClick = []() {
-        std::cout << "Clicked! \n";
+
+    button->onClick = [&]() {
+        money++;
+        moneyCount->setString(std::string("Money: $" + std::to_string(money)));
     };
 
-    Textbox* textbox = new Textbox("Edit me", &font);
-    textbox->setOutline(Outline(5.f, sf::Color::Black, {100.f, 25.f}));
-    textbox->setAlignment(TOP_CENTER);
-    textbox->toggleMutability(true);
-    textbox->setRule(Textbox::Rule::ANY);
-
-    Textbox* textbox2 = new Textbox("DONT edit me", &font);
-    textbox2->setOutline(Outline(2.f, sf::Color::Black, textbox2->getSize()));
-    textbox2->setAlignment(BOTTOM_CENTER);
-    textbox2->setBackgroundColor(sf::Color::Cyan);
-
+    frame.addChild(moneyCount);
     frame.addChild(button);
-    frame.addChild(textbox);
-    frame.addChild(textbox2);
 
     Textbox* currTextbox {nullptr};
 
@@ -183,7 +181,7 @@ int main()
     }
 
     delete button;
-    delete textbox;
+    delete moneyCount;
 
     return 0;
 }

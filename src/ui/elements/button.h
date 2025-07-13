@@ -63,6 +63,7 @@ class Button : public Element
 
         void setText(std::string new_text);
         void setTexture(Texture new_texture);
+        void setBackgroundColor(sf::Color color) {m_rect.setFillColor(color);}
         
         void toggle(bool enabled) {active = enabled;}
         bool isActive() {return active;} 
