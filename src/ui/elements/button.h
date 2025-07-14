@@ -46,7 +46,7 @@ class Button : public Element
 
         Button(
             sf::Vector2f size = {50.f, 50.f}, 
-            Alignment alignment = NIL_ALIGNMENT, 
+            Layout::Alignment alignment = Layout::Alignment::NIL_ALIGNMENT, 
             std::optional<Text> button_text = std::nullopt, 
             std::optional<Texture> button_texture = std::nullopt, 
             sf::Color button_color = sf::Color::White
@@ -70,7 +70,7 @@ class Button : public Element
 
         std::function<void()> onClick;
 
-        Alignment getAlignment() {return m_alignment;}
+        Layout::Alignment getAlignment() {return m_alignment;}
 
     private:
         sf::RectangleShape m_rect;
@@ -79,7 +79,7 @@ class Button : public Element
 
         std::optional<Texture> btnTexture;
 
-        Alignment m_alignment = NIL_ALIGNMENT;
+        Layout::Alignment m_alignment = Layout::Alignment::NIL_ALIGNMENT;
         Outline m_outline {0.f, sf::Color::Black, {0.f, 0.f}};
 
         void adjustText(bool overrideFitting = false);

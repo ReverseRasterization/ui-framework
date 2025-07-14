@@ -24,7 +24,7 @@ void Textbox::adjustText(bool overrideFitting)
         float scaleY = (backgroundSize.y - m_padding * 2) / textBounds.size.y;
         float scale = std::min(scaleX, scaleY);
 
-        m_text.setCharacterSize(std::clamp(100 * scale, 1.f, 256.f));
+        m_text.setCharacterSize(std::clamp(100 * scale, 1.1f, 256.f));
     }
 
     sf::FloatRect newBounds = m_text.getLocalBounds();

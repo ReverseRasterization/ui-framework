@@ -38,7 +38,7 @@ void Frame::setPosition(sf::Vector2f new_pos)
     m_rect.setPosition(new_pos);
 }
 
-void Frame::setAlignment(Alignment alignment)
+void Frame::setAlignment(Layout::Alignment alignment)
 {
     m_alignment = alignment;
 
@@ -87,7 +87,7 @@ void Frame::onWindowResized()
     m_rect.setSize(rectSize*scale);
     m_rect.setOutlineThickness(m_outline.adjust(rectSize*scale));
 
-    if(m_alignment != NIL_ALIGNMENT) {setAlignment(m_alignment);}
+    if(m_alignment != Layout::Alignment::NIL_ALIGNMENT) {setAlignment(m_alignment);}
 
     // Then, children
 
@@ -100,7 +100,7 @@ void Frame::onWindowResized()
 
         child->setPosition(
             
-            getPosInSpace(rectSize * scale, child->getSize(), m_rect.getPosition(), child->getAlignment(), child->getOutlineSize())
+            Layout::getPosInSpace(rectSize * scale, child->getSize(), m_rect.getPosition(), child->getAlignment(), child->getOutlineSize())
         );
     };
 
@@ -110,7 +110,7 @@ void Frame::addChild(Element* child)
 {
     children.push_back(child);
     child->setPosition(
-        getPosInSpace(m_rect.getSize(), child->getSize(), m_rect.getPosition(), child->getAlignment(), child->getOutlineSize())
+        Layout::getPosInSpace(m_rect.getSize(), child->getSize(), m_rect.getPosition(), child->getAlignment(), child->getOutlineSize())
     );
 }
 
@@ -126,3 +126,4 @@ Element* Frame::getChildFromPosition(sf::Vector2f position)
 
     return nullptr;
 }
+

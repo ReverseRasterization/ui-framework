@@ -19,8 +19,8 @@ FetchContent_MakeAvailable(SFML)
 add_executable(main 
                     src/main.cpp 
 
-                    src/ui/alignment.cpp
                     src/ui/outline.h
+                    src/ui/layout.cpp
                     
                     src/ui/frame.cpp
 

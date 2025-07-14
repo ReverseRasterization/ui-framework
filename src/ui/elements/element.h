@@ -4,8 +4,9 @@
 
 #include <iostream>
 
-#include "../alignment.h"
 #include "../outline.h"
+#include "../layout.h"
+
 
 class Element
 {
@@ -30,15 +31,15 @@ class Element
         virtual void setOutline(Outline outline) = 0;
         virtual float getOutlineSize() = 0;
         
-        void setAlignment(Alignment alignment) {m_alignment = alignment;};
-        Alignment getAlignment() {return m_alignment;}
+        void setAlignment(Layout::Alignment alignment) {m_alignment = alignment;};
+        Layout::Alignment getAlignment() {return m_alignment;}
 
         void setType(Type new_type) {this->type=new_type;}
         Type getType(){return type;}
 
     private:
 
-        Alignment m_alignment = NIL_ALIGNMENT;
+        Layout::Alignment m_alignment = Layout::Alignment::NIL_ALIGNMENT;
         Outline m_outline {0.f, sf::Color::Black, {0.f, 0.f}};
 
         Type type;

@@ -3,6 +3,7 @@
 
 #include <SFML/Graphics.hpp>
 
+#include "ui/layout.h"
 #include "ui/frame.h"
 #include "ui/elements/button.h"
 #include "ui/elements/textbox.h"
@@ -71,16 +72,16 @@ int main()
     Frame frame(&window);
     frame.setSize({500.f, 300.f});
     frame.setOutline(Outline(10.f, sf::Color::Blue, {500.f, 300.f}));
-    frame.setAlignment(CENTER);
+    frame.setAlignment(Layout::Alignment::CENTER);
 
     Textbox* moneyCount = new Textbox("Money: $0", &font);
     moneyCount->setSize({frame.getSize().x, 25.f});
-    moneyCount->setAlignment(TOP_CENTER);
+    moneyCount->setAlignment(Layout::Alignment::TOP_CENTER);
 
-    Button* button = new Button({100.f, 25.f}, NIL_ALIGNMENT, Button::Text("Click for money!", &font, 4, sf::Color::Black));
+    Button* button = new Button({100.f, 25.f}, Layout::Alignment::NIL_ALIGNMENT, Button::Text("Click for money!", &font, 4, sf::Color::Black));
     button->setBackgroundColor(sf::Color::Green);
     button->setOutline(Outline(5.f, sf::Color::Black, button->getSize()));
-    button->setAlignment(CENTER);
+    button->setAlignment(Layout::Alignment::CENTER);
 
     button->onClick = [&]() {
         money++;

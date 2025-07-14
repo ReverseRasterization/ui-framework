@@ -19,7 +19,7 @@ void Button::adjustText(bool overrideFitting)
         float scaleY = (buttonSize.y - padding * 2) / textBounds.size.y;
         float scale = std::min(scaleX, scaleY);
 
-        text.setCharacterSize(100 * scale);
+        text.setCharacterSize(std::clamp(100 * scale, 1.f, 256.f));
     }
 
     sf::FloatRect newBounds = text.getLocalBounds();
@@ -27,10 +27,10 @@ void Button::adjustText(bool overrideFitting)
     text.setPosition({m_rect.getPosition().x + (buttonSize.x/2), m_rect.getPosition().y + (buttonSize.y / 2)});   
 }
 
-Button::Button(sf::Vector2f size, Alignment alignment, std::optional<Text> button_text, std::optional<Texture> button_texture, sf::Color button_color)
+Button::Button(sf::Vector2f size, Layout::Alignment alignment, std::optional<Text> button_text, std::optional<Texture> button_texture, sf::Color button_color)
 {
     setSize(size);
-    if (alignment != NIL_ALIGNMENT) {setAlignment(alignment);}
+    if (alignment != Layout::Alignment::NIL_ALIGNMENT) {setAlignment(alignment);}
 
     if(button_text.has_value())
     {

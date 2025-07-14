@@ -3,12 +3,10 @@
 #include <memory>
 
 #include <SFML/Graphics.hpp>
-#include "alignment.h"
+#include "layout.h"
 #include "outline.h"
 
 #include "elements/element.h"
-
-class Button;
 
 class Frame
 {
@@ -23,7 +21,7 @@ class Frame
         void setColor(sf::Color new_color) { m_rect.setFillColor(new_color); }
 
         void setOutline(Outline outline);
-        void setAlignment(Alignment alignment);
+        void setAlignment(Layout::Alignment alignment);
 
         void addChild(Element* child);
         Element* getChildFromPosition(sf::Vector2f position);
@@ -41,7 +39,7 @@ class Frame
         sf::RectangleShape m_rect;
         sf::Window* m_window;
 
-        Alignment m_alignment = NIL_ALIGNMENT;
+        Layout::Alignment m_alignment = Layout::Alignment::NIL_ALIGNMENT;
         Outline m_outline {0.f, sf::Color::Black, {0.f, 0.f}};
 
         sf::Vector2f sizeScale;
@@ -49,3 +47,4 @@ class Frame
 
         std::vector<Element*> children;
 };
+
