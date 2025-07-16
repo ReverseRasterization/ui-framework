@@ -19,14 +19,14 @@ FetchContent_MakeAvailable(SFML)
 add_executable(main 
                     src/main.cpp 
 
-                    src/ui/outline.h
+                    # src/ui/outline.h
                     src/ui/layout.cpp
                     
                     src/ui/frame.cpp
 
                     src/ui/elements/element.h
-                    src/ui/elements/button.cpp
-                    src/ui/elements/textbox.cpp
+                    # src/ui/elements/button.cpp
+                    # src/ui/elements/textbox.cpp
 
                     
 )

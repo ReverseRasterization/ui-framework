@@ -43,6 +43,4 @@ class Element
         Outline m_outline {0.f, sf::Color::Black, {0.f, 0.f}};
 
         Type type;
-
-
 };

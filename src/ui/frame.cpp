@@ -43,7 +43,7 @@ void Frame::setAlignment(Layout::Alignment alignment)
     m_alignment = alignment;
 
     m_rect.setPosition(
-        getPosInSpace( 
+        Layout::getPosInSpace( 
             (sf::Vector2f) m_window->getSize(), 
             m_rect.getSize(), 
             {0.f, 0.f}, 
