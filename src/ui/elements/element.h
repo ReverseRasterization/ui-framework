@@ -7,7 +7,6 @@
 #include "../outline.h"
 #include "../layout.h"
 
-
 class Element
 {
     public:
@@ -34,6 +33,9 @@ class Element
         void setAlignment(Layout::Alignment alignment) {m_alignment = alignment;};
         Layout::Alignment getAlignment() {return m_alignment;}
 
+        void setCellOccupancy(unsigned int cell) {m_parentCell = cell;}
+        unsigned int getCellOccupancy() {return m_parentCell;}
+
         void setType(Type new_type) {this->type=new_type;}
         Type getType(){return type;}
 
@@ -41,6 +43,8 @@ class Element
 
         Layout::Alignment m_alignment = Layout::Alignment::NIL_ALIGNMENT;
         Outline m_outline {0.f, sf::Color::Black, {0.f, 0.f}};
+
+        unsigned int m_parentCell = 0;
 
         Type type;
 };

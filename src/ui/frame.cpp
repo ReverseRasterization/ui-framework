@@ -12,6 +12,7 @@ Frame::Frame(sf::RenderWindow* window, sf::Color color):
 void Frame::draw(sf::RenderWindow& window)
 {
     window.draw(m_rect);
+    m_layout.drawCells(window);
 
     for (Element* child : children)
     {
@@ -19,30 +20,36 @@ void Frame::draw(sf::RenderWindow& window)
     }
 }
 
-void Frame::setSize(sf::Vector2f new_size)
+void Frame::setSize(sf::Vector2f new_size, bool adjust_scale)
 {
     m_rect.setSize(new_size);
     m_rect.setOutlineThickness(m_outline.adjust(new_size));
 
-    sf::Vector2f windowSize = (sf::Vector2f) m_window->getSize();
+    m_layout.setBounds(getPosition(), getSize());
 
-    sizeScale = {
-        new_size.x/windowSize.x,
-        new_size.y/windowSize.y
-    };
-    aspectRatio = new_size.x/new_size.y;
+    if (adjust_scale)
+    {
+        sf::Vector2f windowSize = (sf::Vector2f) m_window->getSize();
+
+        sizeScale = {
+            new_size.x/windowSize.x,
+            new_size.y/windowSize.y
+        };
+        aspectRatio = new_size.x/new_size.y;
+    }
 }
 
 void Frame::setPosition(sf::Vector2f new_pos)
 {
     m_rect.setPosition(new_pos);
+    m_layout.setBounds(new_pos, getSize());
 }
 
 void Frame::setAlignment(Layout::Alignment alignment)
 {
     m_alignment = alignment;
 
-    m_rect.setPosition(
+    setPosition(
         Layout::getPosInSpace( 
             (sf::Vector2f) m_window->getSize(), 
             m_rect.getSize(), 
@@ -84,7 +91,7 @@ void Frame::onWindowResized()
 
     float scale = std::min(projectedRectSize.x / rectSize.x, projectedRectSize.y / rectSize.y);
 
-    m_rect.setSize(rectSize*scale);
+    setSize(rectSize*scale, false);
     m_rect.setOutlineThickness(m_outline.adjust(rectSize*scale));
 
     if(m_alignment != Layout::Alignment::NIL_ALIGNMENT) {setAlignment(m_alignment);}
@@ -93,6 +100,10 @@ void Frame::onWindowResized()
 
     for (Element* child : children)
     {
+        GridLayout::Cell* parentCell = m_layout.getCellFromID(child->getCellOccupancy());
+        sf::Vector2f spacePos = parentCell->getPosition();
+        sf::Vector2f spaceSize = parentCell->getSize();
+
         child->setSize({
             (rectSize.x * scale) * (child->getSize().x/rectSize.x),
             (rectSize.y * scale) * (child->getSize().y/rectSize.y)
@@ -100,7 +111,7 @@ void Frame::onWindowResized()
 
         child->setPosition(
             
-            Layout::getPosInSpace(rectSize * scale, child->getSize(), m_rect.getPosition(), child->getAlignment(), child->getOutlineSize())
+            Layout::getPosInSpace(spaceSize, child->getSize(), spacePos, child->getAlignment(), child->getOutlineSize())
         );
     };
 
@@ -109,8 +120,21 @@ void Frame::onWindowResized()
 void Frame::addChild(Element* child)
 {
     children.push_back(child);
+
+    GridLayout::Cell* parentCell = m_layout.getCellFromID(child->getCellOccupancy());
+    sf::Vector2f spacePos = getPosition();
+    sf::Vector2f spaceSize = getSize();
+
+    if (parentCell)
+    {
+        spacePos = parentCell->getPosition();
+        spaceSize = parentCell->getSize();
+    }else {
+        child->setCellOccupancy(0);
+    }
+
     child->setPosition(
-        Layout::getPosInSpace(m_rect.getSize(), child->getSize(), m_rect.getPosition(), child->getAlignment(), child->getOutlineSize())
+        Layout::getPosInSpace(spaceSize, child->getSize(), spacePos, child->getAlignment(), child->getOutlineSize())
     );
 }
 

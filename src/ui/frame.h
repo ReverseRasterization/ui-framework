@@ -16,7 +16,7 @@ class Frame
 
         Frame(sf::RenderWindow* window, sf::Color color = sf::Color::White);
 
-        void setSize(sf::Vector2f new_size);
+        void setSize(sf::Vector2f new_size, bool adjustScale = true);
         void setPosition(sf::Vector2f new_pos);
         void setColor(sf::Color new_color) { m_rect.setFillColor(new_color); }
 
@@ -41,6 +41,7 @@ class Frame
 
         Layout::Alignment m_alignment = Layout::Alignment::NIL_ALIGNMENT;
         Outline m_outline {0.f, sf::Color::Black, {0.f, 0.f}};
+        GridLayout m_layout = GridLayout(3, 1, {0.f, 0.f}, {0.f, 0.f});
 
         sf::Vector2f sizeScale;
         float aspectRatio;
