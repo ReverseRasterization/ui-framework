@@ -44,7 +44,10 @@ void Textbox::adjustText(bool overrideFitting)
         float scaleY = (backgroundSize.y - m_padding * 2) / textBounds.size.y;
         float scale = std::min(scaleX, scaleY);
 
-        m_text.setCharacterSize(std::clamp(100 * scale, 1.1f, 256.f));
+        float nSize = std::clamp(100 * scale, 1.1f, 256.f);
+
+        m_text.setCharacterSize(nSize);
+        m_text.setOutlineThickness(nSize * m_outline_ratio);
     }
 
     sf::FloatRect newBounds = m_text.getLocalBounds();
@@ -63,7 +66,7 @@ Textbox::Textbox
             unsigned int padding, 
             sf::Color fill_color, 
             sf::Color outline_color,
-            float outline_thickness
+            float outline_ratio
 ):           
     m_text(*font, text, 0),
     m_text_contents(text),
@@ -71,13 +74,14 @@ Textbox::Textbox
     m_background(size),
     m_background_color(backgroundColor),
     m_text_color(fill_color),
+    m_outline_ratio(outline_ratio),
     m_padding(padding),
     m_rule(rule)
 {
     m_background.setFillColor(backgroundColor);
     m_text.setFillColor(fill_color);
     m_text.setOutlineColor(outline_color);
-    m_text.setOutlineThickness(outline_thickness);
+    // set outline thickness will be taken care of whenever the adjust text function is called
     
     setType(T_TXBX);
 

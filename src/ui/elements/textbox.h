@@ -55,7 +55,7 @@ class Textbox: public Element
             unsigned int padding = 4, 
             sf::Color fill_color = sf::Color::Black, 
             sf::Color outline_color = sf::Color::Black,
-            float outline_thickness = 0.f
+            float outline_ratio = 0.f // relative to the character size
         );
 
     private:
@@ -68,6 +68,7 @@ class Textbox: public Element
         sf::RectangleShape m_background;
         sf::Color m_background_color;
         sf::Color m_text_color;
+        float m_outline_ratio = 0.f;
         sf::Text m_text;
 
         std::string m_text_contents;

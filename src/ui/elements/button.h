@@ -12,21 +12,11 @@ class Button : public Element
             std::unique_ptr<sf::Text> t_txt;
             unsigned int t_padding;
 
-            Text(std::string text, sf::Font* font, unsigned int padding=4, sf::Color text_color=sf::Color::Black, sf::Color outline_color=sf::Color::Transparent, unsigned int outline_thickness = 0)
-            {
-                sf::Text nText(*font, text, 100); // character size is only set to 100 for now, the setSize() function should take good care of it >:)
-                nText.setFillColor(text_color);
+            float t_outlineRatio;
 
-                if (outline_color != sf::Color::Transparent)
-                {
-                    nText.setOutlineThickness(outline_thickness);
-                    nText.setOutlineColor(outline_color);
-                }
-                
+            Text(std::string text, sf::Font* font, unsigned int padding=4, sf::Color text_color=sf::Color::Black, sf::Color outline_color=sf::Color::Transparent, float outline_ratio = 0.f);
 
-                t_txt = std::make_unique<sf::Text>(nText);
-                t_padding = padding;
-            }
+            void setCharSize(unsigned int new_size);
         };
 
         struct Texture

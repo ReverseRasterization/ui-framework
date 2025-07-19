@@ -1,7 +1,6 @@
 /*
     TODO:
     
-    * Make it so that text outlines for buttons and textboxes can also scale with the window
     * Add a position option for elements
         - The position will scale accordingly to the cell
 
@@ -81,13 +80,12 @@ int main()
     frame.setOutline(Outline(10.f, sf::Color::Blue, {500.f, 300.f}));
     frame.setAlignment(Layout::Alignment::CENTER);
 
-    Textbox* tbox = new Textbox("", &font);
+    Textbox* tbox = new Textbox("", &font, {100.f, 25.f}, true, Textbox::ANY, sf::Color::White, 4, sf::Color::Black, sf::Color::Red, 0.05f);
     tbox->setAlignment(Layout::Alignment::CENTER);
     tbox->setOutline(Outline(5.f, sf::Color::Black, tbox->getSize()));
-    tbox->toggleMutability(true);
     tbox->setPlaceholderText("Type here");
 
-    Button* btn = new Button({50.f, 50.f}, Layout::Alignment::CENTER, Button::Text("CLEAR", &font, 4, sf::Color::White, sf::Color::Black, 2));
+    Button* btn = new Button({50.f, 50.f}, Layout::Alignment::CENTER, Button::Text("CLEAR", &font, 4, sf::Color::White, sf::Color::Black, 0.2f));
     btn->setCellOccupancy(1);
     btn->setOutline(Outline(5.f, sf::Color::Black, btn->getSize()));
     btn->setBackgroundColor(sf::Color::Red); 

@@ -1,6 +1,45 @@
 #include "button.h"
 #include <iostream>
 
+/*
+
+    TEXT OBJECT
+
+*/
+
+
+Button::Text::Text(std::string text, sf::Font* font, unsigned int padding, sf::Color text_color, sf::Color outline_color, float outline_ratio):
+    t_outlineRatio(outline_ratio)
+{
+    sf::Text nText(*font, text, 100); // character size is only set to 100 for now, the setSize() function should take good care of it >:)
+    nText.setFillColor(text_color);
+
+    if (outline_color != sf::Color::Transparent)
+    {
+       // outline thickness is not set yet, as the setSize function will take care of that
+        nText.setOutlineColor(outline_color);
+    }
+
+    t_txt = std::make_unique<sf::Text>(nText);
+    t_padding = padding;
+}
+
+void Button::Text::setCharSize(unsigned int new_size)
+{
+    t_txt->setCharacterSize(new_size);
+
+    if (t_outlineRatio > 0.f)
+    {
+        t_txt->setOutlineThickness((float) new_size * t_outlineRatio);
+    }
+}
+
+/*
+
+    BUTTON OBJECT
+
+*/
+
 void Button::adjustText(bool overrideFitting)
 {
     if (!btnText.has_value()){return;}
@@ -11,7 +50,7 @@ void Button::adjustText(bool overrideFitting)
 
     if (!overrideFitting)
     {
-        text.setCharacterSize(100);
+        text.setCharacterSize(100); // not gonna use the setCharSize function because this is just to set a benchmark
         sf::FloatRect textBounds = text.getLocalBounds();
 
         float padding = btnText->t_padding;
@@ -19,7 +58,7 @@ void Button::adjustText(bool overrideFitting)
         float scaleY = (buttonSize.y - padding * 2) / textBounds.size.y;
         float scale = std::min(scaleX, scaleY);
 
-        text.setCharacterSize(std::clamp(100 * scale, 1.f, 256.f));
+        btnText->setCharSize(std::clamp(100 * scale, 1.f, 256.f));
     }
 
     sf::FloatRect newBounds = text.getLocalBounds();
