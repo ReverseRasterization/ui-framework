@@ -1,3 +1,12 @@
+/*
+    TODO:
+    
+    * Make it so that text outlines for buttons and textboxes can also scale with the window
+    * Add a position option for elements
+        - The position will scale accordingly to the cell
+
+*/
+
 #include <iostream>
 #include <format>
 
@@ -51,8 +60,6 @@ iElement getInteractiveFromPosition(sf::Vector2f pos, Frame& active_frame);
 
 int main()
 {
-    int money = 0;
-
     sf::RenderWindow window(sf::VideoMode({800, 800}), "UI Framework Test");
 
     sf::Font font;
@@ -74,24 +81,23 @@ int main()
     frame.setOutline(Outline(10.f, sf::Color::Blue, {500.f, 300.f}));
     frame.setAlignment(Layout::Alignment::CENTER);
 
-    Textbox* moneyCount = new Textbox("Money: $0", &font);
-    moneyCount->setSize({frame.getSize().x, 50.f});
-    moneyCount->setAlignment(Layout::Alignment::CENTER);
-    moneyCount->setCellOccupancy(0);
+    Textbox* tbox = new Textbox("", &font);
+    tbox->setAlignment(Layout::Alignment::CENTER);
+    tbox->setOutline(Outline(5.f, sf::Color::Black, tbox->getSize()));
+    tbox->toggleMutability(true);
+    tbox->setPlaceholderText("Type here");
 
-    Button* button = new Button({100.f, 25.f}, Layout::Alignment::NIL_ALIGNMENT, Button::Text("Click for money!", &font, 4, sf::Color::Black));
-    button->setBackgroundColor(sf::Color::Green);
-    button->setOutline(Outline(5.f, sf::Color::Black, button->getSize()));
-    button->setAlignment(Layout::Alignment::CENTER);
-    button->setCellOccupancy(1);
+    Button* btn = new Button({50.f, 50.f}, Layout::Alignment::CENTER, Button::Text("CLEAR", &font, 4, sf::Color::White, sf::Color::Black, 2));
+    btn->setCellOccupancy(1);
+    btn->setOutline(Outline(5.f, sf::Color::Black, btn->getSize()));
+    btn->setBackgroundColor(sf::Color::Red); 
 
-    button->onClick = [&]() {
-        money++;
-        moneyCount->setString(std::string("Money: $" + std::to_string(money)));
+    btn->onClick = [&]() {
+        tbox->setString("");
     };
 
-    frame.addChild(moneyCount);
-    frame.addChild(button);
+    frame.addChild(tbox);
+    frame.addChild(btn);
 
     Textbox* currTextbox {nullptr};
 
@@ -168,7 +174,7 @@ int main()
             if(const auto* textEntered = event->getIf<sf::Event::TextEntered>())
             {
 
-                if (currTextbox && textEntered->unicode < 128)
+                if (currTextbox)
                 {
                     currTextbox->handleKey(textEntered->unicode);
                 }

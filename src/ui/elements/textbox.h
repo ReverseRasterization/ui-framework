@@ -26,6 +26,8 @@ class Textbox: public Element
 
         void setBackgroundColor(sf::Color color) {m_background.setFillColor(color); m_background_color = color;}
 
+        void setPlaceholderText(std::string placeholder_text);
+        
         void setOutline(Outline outline);
         float getOutlineSize(){return m_outline.getThickness();};
 
@@ -58,14 +60,18 @@ class Textbox: public Element
 
     private:
 
+        void togglePlaceholder(bool toggle);
+
         // m_alignment is here from the Elements class
         Outline m_outline{0.f, sf::Color::Black, {0.f, 0.f}};
 
         sf::RectangleShape m_background;
         sf::Color m_background_color;
+        sf::Color m_text_color;
         sf::Text m_text;
 
         std::string m_text_contents;
+        std::string m_placeholder_text;
 
         bool isMutable = false;
         bool selected = false;

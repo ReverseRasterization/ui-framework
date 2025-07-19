@@ -2,13 +2,33 @@
 #include <algorithm>
 #include <iostream>
 
-sf::Color dimColor(sf::Color color, float factor)
+sf::Color tuneColor(sf::Color color, float factor)
 {
+    auto adjust = [factor](u_int8_t c)
+    {
+        if (factor > 1 && c == 0) c = 50;
+        return c * factor;
+    };
+
     return sf::Color(
-        color.r*factor,
-        color.g*factor,
-        color.b*factor 
+        adjust(color.r),
+        adjust(color.g),
+        adjust(color.b)
     );
+}
+
+void Textbox::togglePlaceholder(bool toggle)
+{
+    if (toggle)
+    {
+        m_text.setFillColor(tuneColor(m_text_color, 1.8f));
+        m_text.setString(m_placeholder_text);
+        adjustText();
+    }else {
+        m_text.setFillColor(m_text_color);
+        m_text.setString(m_text_contents);
+        adjustText();
+    }
 }
 
 void Textbox::adjustText(bool overrideFitting)
@@ -50,17 +70,23 @@ Textbox::Textbox
     isMutable(is_mutable),
     m_background(size),
     m_background_color(backgroundColor),
+    m_text_color(fill_color),
     m_padding(padding),
     m_rule(rule)
 {
-    adjustText();
-
     m_background.setFillColor(backgroundColor);
     m_text.setFillColor(fill_color);
     m_text.setOutlineColor(outline_color);
     m_text.setOutlineThickness(outline_thickness);
-
+    
     setType(T_TXBX);
+
+    if (!text.empty())
+    {
+        setString(text);
+    }else {
+        togglePlaceholder(true);
+    }
 }           
 
 void Textbox::setOutline(Outline outline)
@@ -74,7 +100,6 @@ void Textbox::setOutline(Outline outline)
 void Textbox::setSize(sf::Vector2f new_size)
 {
     m_background.setOutlineThickness(m_outline.adjust(new_size));
-
     m_background.setSize(new_size);
     adjustText();
 }
@@ -90,6 +115,11 @@ void Textbox::setString(std::string new_string)
     m_text_contents = new_string;
     m_text.setString(new_string);
 
+    if (!selected && new_string.empty())
+    {
+        togglePlaceholder(true);
+    }
+    
     adjustText();
 }
 
@@ -97,15 +127,20 @@ void Textbox::handleClick()
 {
     if (!isMutable || selected){return;}
 
+    togglePlaceholder(false);
+
     sf::Color currColor = m_background.getFillColor();
     
     selected = true;
-    m_background.setFillColor(dimColor(m_background_color, .8f));
+    m_background.setFillColor(tuneColor(m_background_color, .8f));
 }
 
 void Textbox::clickOff()
 {
     if (!selected){return;}
+
+    if (m_text_contents.empty())
+        togglePlaceholder(true);
 
     selected = false;
     m_background.setFillColor(m_background_color);
@@ -113,6 +148,9 @@ void Textbox::clickOff()
 
 void Textbox::handleKey(char32_t character)
 {
+    if (character >= 128 || character == 13)
+        return;
+
     if (character == 8) // backspace
     {
         if (!m_text_contents.empty())
@@ -138,6 +176,13 @@ void Textbox::handleKey(char32_t character)
         }
     }
 
-    m_text.setString(m_text_contents);
-    adjustText();
+    setString(m_text_contents);
+}
+
+void Textbox::setPlaceholderText(std::string placeholder_text)
+{
+    m_placeholder_text = placeholder_text;
+
+    if (m_text_contents.empty())
+        togglePlaceholder(true);
 }

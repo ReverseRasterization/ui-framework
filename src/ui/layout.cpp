@@ -60,11 +60,11 @@ void GridLayout::setBounds(sf::Vector2f new_tl_pos, sf::Vector2f new_size)
 
 GridLayout::Cell* GridLayout::getCellFromID(unsigned int id)
 {
-    if (grid.size()-1 > id)
+    if (grid.size()-1 >= id)
     {
         return &grid[id];
     }else {
-        std::cerr << "Cannot get cell " << id << ", out of bounds.";
+        std::cerr << "Cannot get cell " << id << ", out of bounds.\n";
         return nullptr;
     }
 }

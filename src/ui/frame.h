@@ -35,13 +35,13 @@ class Frame
         sf::RectangleShape* getRect() { return &m_rect; }
 
     private:
-
+    
         sf::RectangleShape m_rect;
         sf::Window* m_window;
 
         Layout::Alignment m_alignment = Layout::Alignment::NIL_ALIGNMENT;
         Outline m_outline {0.f, sf::Color::Black, {0.f, 0.f}};
-        GridLayout m_layout = GridLayout(3, 1, {0.f, 0.f}, {0.f, 0.f});
+        GridLayout m_layout = GridLayout(3, 3, {0.f, 0.f}, {0.f, 0.f});
 
         sf::Vector2f sizeScale;
         float aspectRatio;
