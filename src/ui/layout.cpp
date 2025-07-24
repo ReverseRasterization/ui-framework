@@ -69,9 +69,9 @@ GridLayout::Cell* GridLayout::getCellFromID(unsigned int id)
     }
 }
 
-sf::Vector2f Layout::getPosInSpace(sf::Vector2f space_size, sf::Vector2f object_size, sf::Vector2f tl_pos, Layout::Alignment alignment, float outline_size)
+sf::Vector2f Layout::getPosInSpace(sf::Vector2f space_size, sf::Vector2f tl_space_pos, sf::Vector2f object_size, sf::Vector2f object_offset_ratio, Layout::Alignment alignment, float outline_size)
 {
-    sf::Vector2f new_pos = tl_pos;
+    sf::Vector2f new_pos = tl_space_pos + sf::Vector2f{space_size.x * object_offset_ratio.x, space_size.y * object_offset_ratio.y};
 
     sf::Vector2f center = {((space_size.x - object_size.x)/2), ((space_size.y-object_size.y)/2)};
 

@@ -101,7 +101,7 @@ void Button::setSize(sf::Vector2f new_size)
 void Button::setPosition(sf::Vector2f new_position)
 {
     m_rect.setPosition(new_position);
-    adjustText(true);
+    adjustText(true); // just so that way the text can catch up with the button
 }
 
 void Button::setOutline(Outline outline)

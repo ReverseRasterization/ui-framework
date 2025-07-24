@@ -1,9 +1,9 @@
 /*
     TODO:
-    
-    * Add a position option for elements
-        - The position will scale accordingly to the cell
 
+    * Add a regular image element 
+    * Frame close & open functions
+    
 */
 
 #include <iostream>
@@ -82,7 +82,7 @@ int main()
 
     Textbox* tbox = new Textbox("", &font, {100.f, 25.f}, true, Textbox::ANY, sf::Color::White, 4, sf::Color::Black, sf::Color::Red, 0.05f);
     tbox->setAlignment(Layout::Alignment::CENTER);
-    tbox->setOutline(Outline(5.f, sf::Color::Black, tbox->getSize()));
+    tbox->setOutline(Outline(5.f, sf::Color::Red, tbox->getSize()));
     tbox->setPlaceholderText("Type here");
 
     Button* btn = new Button({50.f, 50.f}, Layout::Alignment::CENTER, Button::Text("CLEAR", &font, 4, sf::Color::White, sf::Color::Black, 0.2f));
@@ -93,6 +93,8 @@ int main()
     btn->onClick = [&]() {
         tbox->setString("");
     };
+
+    // TODO: Test the image
 
     frame.addChild(tbox);
     frame.addChild(btn);

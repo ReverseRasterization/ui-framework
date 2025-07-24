@@ -52,8 +52,9 @@ void Frame::setAlignment(Layout::Alignment alignment)
     setPosition(
         Layout::getPosInSpace( 
             (sf::Vector2f) m_window->getSize(), 
+            {0.f, 0.f},
             m_rect.getSize(), 
-            {0.f, 0.f}, 
+            {0.f, 0.f},
             alignment,
             m_outline.o_thickness
         )
@@ -111,7 +112,7 @@ void Frame::onWindowResized()
 
         child->setPosition(
             
-            Layout::getPosInSpace(spaceSize, child->getSize(), spacePos, child->getAlignment(), child->getOutlineSize())
+            Layout::getPosInSpace(spaceSize, spacePos, child->getSize(), child->getOffset(), child->getAlignment(), child->getOutlineSize())
         );
     };
 
@@ -134,7 +135,7 @@ void Frame::addChild(Element* child)
     }
 
     child->setPosition(
-        Layout::getPosInSpace(spaceSize, child->getSize(), spacePos, child->getAlignment(), child->getOutlineSize())
+        Layout::getPosInSpace(spaceSize, spacePos, child->getSize(), child->getOffset(), child->getAlignment(), child->getOutlineSize())
     );
 }
 

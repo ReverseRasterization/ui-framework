@@ -26,7 +26,7 @@ namespace Layout
         NIL_ALIGNMENT
     };
 
-    sf::Vector2f getPosInSpace(sf::Vector2f space_size, sf::Vector2f object_size, sf::Vector2f tl_pos, Layout::Alignment alignment, float outline_size=0.f);
+    sf::Vector2f getPosInSpace(sf::Vector2f space_size, sf::Vector2f tl_space_pos, sf::Vector2f object_size, sf::Vector2f object_offset_ratio, Layout::Alignment alignment, float outline_size=0.f);
 }
 
 class GridLayout
