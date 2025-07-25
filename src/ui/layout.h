@@ -43,7 +43,7 @@ class GridLayout
             sf::Vector2f getPosition(){return c_tlPos;}
             sf::Vector2f getSize(){return c_size;}
 
-            Cell(sf::Vector2f position, sf::Vector2f size, sf::Vector2f space_position):
+            Cell(sf::Vector2f position, sf::Vector2f size):
                 c_tlPos(position),
                 c_size(size) {}
         };
@@ -53,7 +53,7 @@ class GridLayout
 
         void setBounds(sf::Vector2f new_tl_pos, sf::Vector2f new_size);
 
-        GridLayout(unsigned int rows, unsigned int columns, sf::Vector2f space_position, sf::Vector2f space_size);
+        GridLayout(unsigned int rows, unsigned int columns);
 
         void drawCells(sf::RenderWindow& window)
         {

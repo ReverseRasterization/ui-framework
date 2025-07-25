@@ -13,23 +13,18 @@
 
 */
 
-GridLayout::GridLayout(unsigned int rows, unsigned int columns, sf::Vector2f space_position, sf::Vector2f space_size):
+GridLayout::GridLayout(unsigned int rows, unsigned int columns): // this serves as more of hey we're gonna setup the list so it can be used later kinda thing yk
     m_rows(rows),
     m_columns(columns)
 {
-    sf::Vector2f cellSize = {
-        space_size.x/columns,
-        space_size.y/rows
-    };
 
     for (int i = 0; i < rows; i++)
     {
         for (int j = 0; j < columns; j++)
         {
             Cell nCell(
-                {space_position.x + (cellSize.x * j), space_position.y + (cellSize.y * i)}, 
-                cellSize, 
-                space_position
+                {0.f, 0.f}, 
+                {0.f, 0.f}
             );
 
             grid.push_back(nCell);

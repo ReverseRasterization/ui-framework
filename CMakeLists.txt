@@ -27,6 +27,7 @@ add_executable(main
                     src/ui/elements/element.h
                     src/ui/elements/button.cpp
                     src/ui/elements/textbox.cpp
+                    src/ui/elements/image.cpp
 
                     
 )

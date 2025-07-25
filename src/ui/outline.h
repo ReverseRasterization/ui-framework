@@ -8,7 +8,7 @@ struct Outline
 {
     float o_thickness;
     sf::Color o_color;
-    float ratio;
+    float ratio = 0.f;
 
     Outline(float thickness, sf::Color color, sf::Vector2f rectangle_size): o_thickness(thickness), o_color(color)
     {

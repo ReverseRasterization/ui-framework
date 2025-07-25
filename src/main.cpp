@@ -1,9 +1,7 @@
 /*
     TODO:
 
-    * Add a regular image element 
-    * Frame close & open functions
-    
+    Add pointer to editable text boxes
 */
 
 #include <iostream>
@@ -15,6 +13,7 @@
 #include "ui/frame.h"
 #include "ui/elements/button.h"
 #include "ui/elements/textbox.h"
+#include "ui/elements/image.h"
 
 struct iElement
 {
@@ -75,7 +74,7 @@ int main()
         return -1;
     }
 
-    Frame frame(&window);
+    Frame frame(&window, sf::Color::White, GridLayout(3, 1));
     frame.setSize({500.f, 300.f});
     frame.setOutline(Outline(10.f, sf::Color::Blue, {500.f, 300.f}));
     frame.setAlignment(Layout::Alignment::CENTER);
@@ -90,14 +89,17 @@ int main()
     btn->setOutline(Outline(5.f, sf::Color::Black, btn->getSize()));
     btn->setBackgroundColor(sf::Color::Red); 
 
+    Image* img = new Image({50.f, 50.f}, Layout::Alignment::CENTER);
+    img->setCellOccupancy(2);
+    img->setImage(Image::TileTexture(&buttonSet, {64, 0}, {32, 32}));
+
     btn->onClick = [&]() {
         tbox->setString("");
     };
 
-    // TODO: Test the image
-
     frame.addChild(tbox);
     frame.addChild(btn);
+    frame.addChild(img);
 
     Textbox* currTextbox {nullptr};
 

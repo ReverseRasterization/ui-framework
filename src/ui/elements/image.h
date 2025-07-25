@@ -1,6 +1,6 @@
 #pragma once
 
-#include <element.h>
+#include "element.h"
 
 class Image : public Element
 {
@@ -33,7 +33,7 @@ class Image : public Element
         void setImage(sf::Texture* new_texture);
         void setImage(TileTexture new_texture);
 
-        Image(sf::Vector2f size = {50.f, 50.f}, Layout::Alignment alignment);
+        Image(sf::Vector2f size, Layout::Alignment alignment);
     private:
         sf::RectangleShape i_rect;
 

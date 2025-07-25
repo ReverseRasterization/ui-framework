@@ -2,9 +2,10 @@
 #include <algorithm>
 #include <iostream>
 
-Frame::Frame(sf::RenderWindow* window, sf::Color color):
+Frame::Frame(sf::RenderWindow* window, sf::Color color, GridLayout layout):
     m_rect({0.f, 0.f}),
-    m_window(window)
+    m_window(window),
+    m_layout(layout)
 {
     m_rect.setFillColor(color);
 }
