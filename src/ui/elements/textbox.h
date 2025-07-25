@@ -15,6 +15,7 @@ class Textbox: public Element
         void draw(sf::RenderWindow& window)
         {
             window.draw(m_background);
+            window.draw(debugRect);
             window.draw(m_text);
         }
 
@@ -24,7 +25,7 @@ class Textbox: public Element
         void setPosition(sf::Vector2f new_position);
         sf::FloatRect getGlobalBounds() {return m_background.getGlobalBounds();}
 
-        void setBackgroundColor(sf::Color color) {m_background.setFillColor(color); m_background_color = color;}
+        void setBackgroundColor(sf::Color color) {m_background.setFillColor(color); m_backgroundColor = color;}
 
         void setPlaceholderText(std::string placeholder_text);
         
@@ -37,7 +38,7 @@ class Textbox: public Element
         bool isInteractive(){return isMutable;}
 
         void setString(std::string new_string);
-        std::string getString(){return m_text_contents;}
+        std::string getString(){return m_textContents;}
 
         void setRule(Rule new_rule) {m_rule = new_rule;}
 
@@ -64,15 +65,21 @@ class Textbox: public Element
 
         // m_alignment is here from the Elements class
         Outline m_outline{0.f, sf::Color::Black, {0.f, 0.f}};
+        float m_outlineRatio = 0.f;
 
         sf::RectangleShape m_background;
-        sf::Color m_background_color;
-        sf::Color m_text_color;
-        float m_outline_ratio = 0.f;
-        sf::Text m_text;
+        sf::RectangleShape debugRect;
+        sf::Color m_backgroundColor;
 
-        std::string m_text_contents;
-        std::string m_placeholder_text;
+        sf::Color m_textColor;
+        sf::Text m_text;
+        sf::Font* m_font;
+
+        std::string m_textContents;
+        std::string m_placeholderText;
+
+        char tailChar = ']';
+        int tailOffset = 0;
 
         bool isMutable = false;
         bool selected = false;

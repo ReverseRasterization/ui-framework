@@ -28,7 +28,7 @@ class Image : public Element
         sf::FloatRect getGlobalBounds() {return i_rect.getGlobalBounds();}
 
         void setOutline(Outline outline);
-        float getOutlineSize() {return m_outline.getThickness();}
+        float getOutlineSize() {return i_outline.getThickness();}
 
         void setImage(sf::Texture* new_texture);
         void setImage(TileTexture new_texture);
@@ -37,6 +37,6 @@ class Image : public Element
     private:
         sf::RectangleShape i_rect;
 
-        Outline m_outline{0.f, sf::Color::Black, {0.f, 0.f}};
+        Outline i_outline{0.f, sf::Color::Black, {0.f, 0.f}};
 
 };

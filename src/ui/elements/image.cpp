@@ -10,12 +10,14 @@ Image::Image(sf::Vector2f size, Layout::Alignment alignment)
 
 void Image::setSize(sf::Vector2f new_size)
 {
-    i_rect.setOutlineThickness(m_outline.adjust(new_size));
+    i_rect.setOutlineThickness(i_outline.adjust(new_size));
     i_rect.setSize(new_size);
 }
 
 void Image::setOutline(Outline new_outline)
 {
+    i_outline = new_outline;
+    
     i_rect.setOutlineColor(new_outline.getColor());
     i_rect.setOutlineThickness(new_outline.getThickness());
 }

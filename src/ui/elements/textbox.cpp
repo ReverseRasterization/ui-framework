@@ -21,23 +21,74 @@ void Textbox::togglePlaceholder(bool toggle)
 {
     if (toggle)
     {
-        m_text.setFillColor(tuneColor(m_text_color, 1.8f));
-        m_text.setString(m_placeholder_text);
+        m_text.setFillColor(tuneColor(m_textColor, 1.8f));
+        m_text.setString(m_placeholderText);
         adjustText();
     }else {
-        m_text.setFillColor(m_text_color);
-        m_text.setString(m_text_contents);
+        m_text.setFillColor(m_textColor);
+        m_text.setString(m_textContents);
         adjustText();
     }
 }
 
+
 void Textbox::adjustText(bool overrideFitting)
 {
+    /*
+        Character size in SFML is the vertical space the glyphs are expected to occupy
+
+        Glyph Properties:
+        
+            advance: how much to move the pen horizontally after drawing the glyph. ** Most accurate for calculating the bounds of the whole text
+            bounds: the bounding box of the glyph.
+            textureRect: the region in the font texture.
+    */
+
+    // sf::Vector2f backgroundSize = m_background.getSize();
+
+    
+    // sf::FloatRect textBounds = m_text.getGlobalBounds();
+
+    // sf::Vector2f t_tl_corner = textBounds.position;
+    // sf::Vector2f t_br_corner = textBounds.position + textBounds.size;
+
+    // sf::Vector2f b_tl_corner = m_background.getPosition();
+    // sf::Vector2f b_br_corner = m_background.getPosition() + m_background.getSize();
+
+    // if (t_tl_corner.x < b_tl_corner.x ||
+    //     t_br_corner.x > b_br_corner.x)
+    // {
+    //     debugRect.setFillColor(sf::Color::Red);
+    // }else {
+    //     debugRect.setFillColor(sf::Color::Green);
+    // }
+
+    // int totalAdvance = 0;
+    // for (char c : m_text.getString())
+    // {
+    //     totalAdvance += m_font->getGlyph(c, m_text.getCharacterSize(), false, m_outline.getThickness()).advance;
+    // }
+
+    // float scale = m_background.getSize().x / totalAdvance;
+    // m_text.setCharacterSize(scale * 100);
+
+
+    // std::cout << "Width: " << totalAdvance << "\n     Bound Width: " << textBounds.size.x << "\n";
+ 
+
+    
+
+    // debugRect.setSize({textBounds.size.x, textBounds.size.y});
+    // debugRect.setPosition(textBounds.position);
+
     sf::Vector2f backgroundSize = m_background.getSize();
 
     if (!overrideFitting)
     {
+        // Set base size and outline FIRST
         m_text.setCharacterSize(100);
+        m_text.setOutlineThickness(100 * m_outlineRatio);
+
         sf::FloatRect textBounds = m_text.getLocalBounds();
 
         float scaleX = (backgroundSize.x - m_padding * 2) / textBounds.size.x;
@@ -47,12 +98,18 @@ void Textbox::adjustText(bool overrideFitting)
         float nSize = std::clamp(100 * scale, 1.1f, 256.f);
 
         m_text.setCharacterSize(nSize);
-        m_text.setOutlineThickness(nSize * m_outline_ratio);
+        m_text.setOutlineThickness(nSize * m_outlineRatio);
     }
 
+    // Centering
     sf::FloatRect newBounds = m_text.getLocalBounds();
-    m_text.setOrigin(newBounds.getCenter());
-    m_text.setPosition({m_background.getPosition().x + (backgroundSize.x/2), m_background.getPosition().y + (backgroundSize.y / 2)});   
+    m_text.setOrigin({newBounds.position.x + newBounds.size.x / 2.f, newBounds.position.y + newBounds.size.y / 2.f});
+    m_text.setPosition(m_background.getPosition() + (backgroundSize / 2.f));
+
+    // Debug rect
+    newBounds = m_text.getGlobalBounds();
+    debugRect.setSize({newBounds.size.x, newBounds.size.y});
+    debugRect.setPosition({newBounds.position.x, newBounds.position.y});
 }
 
 Textbox::Textbox
@@ -69,12 +126,13 @@ Textbox::Textbox
             float outline_ratio
 ):           
     m_text(*font, text, 0),
-    m_text_contents(text),
+    m_font(font),
+    m_textContents(text),
     isMutable(is_mutable),
     m_background(size),
-    m_background_color(backgroundColor),
-    m_text_color(fill_color),
-    m_outline_ratio(outline_ratio),
+    m_backgroundColor(backgroundColor),
+    m_textColor(fill_color),
+    m_outlineRatio(outline_ratio),
     m_padding(padding),
     m_rule(rule)
 {
@@ -116,8 +174,10 @@ void Textbox::setPosition(sf::Vector2f new_position)
 
 void Textbox::setString(std::string new_string)
 {
-    m_text_contents = new_string;
-    m_text.setString(new_string);
+    m_textContents = new_string;
+
+    selected ? m_text.setString(new_string + tailChar) : m_text.setString(new_string);
+    
 
     if (!selected && new_string.empty())
     {
@@ -136,18 +196,23 @@ void Textbox::handleClick()
     sf::Color currColor = m_background.getFillColor();
     
     selected = true;
-    m_background.setFillColor(tuneColor(m_background_color, .8f));
+    m_background.setFillColor(tuneColor(m_backgroundColor, .8f));
+
+    m_text.setString(m_textContents + tailChar);
+    adjustText();
 }
 
 void Textbox::clickOff()
 {
     if (!selected){return;}
 
-    if (m_text_contents.empty())
+    if (m_textContents.empty())
         togglePlaceholder(true);
 
     selected = false;
-    m_background.setFillColor(m_background_color);
+    m_background.setFillColor(m_backgroundColor);
+
+    setString(m_textContents);
 }
 
 void Textbox::handleKey(char32_t character)
@@ -157,36 +222,38 @@ void Textbox::handleKey(char32_t character)
 
     if (character == 8) // backspace
     {
-        if (!m_text_contents.empty())
+        if (!m_textContents.empty())
         {
-            m_text_contents.pop_back();
+            m_textContents.pop_back();
         }
     }else {
         if (m_rule == ANY)
         {
-            m_text_contents += character;
+            m_textContents += character;
         }else if (m_rule == NUMBERS_ONLY)
         {
             if (character >= 48 && character <= 57)
             {
-                m_text_contents += character;
+                m_textContents += character;
             }
         }else // letters only
         {
             if ((character >= 65 && character <= 90) || (character >= 97 && character <= 122))
             {
-                m_text_contents += character;
+                m_textContents += character;
             }
         }
     }
 
-    setString(m_text_contents);
+    std::cout << m_font->getGlyph(character, m_text.getCharacterSize(), false, m_outline.getThickness()).advance << '\n';
+
+    setString(m_textContents);
 }
 
 void Textbox::setPlaceholderText(std::string placeholder_text)
 {
-    m_placeholder_text = placeholder_text;
+    m_placeholderText = placeholder_text;
 
-    if (m_text_contents.empty())
+    if (m_textContents.empty())
         togglePlaceholder(true);
 }

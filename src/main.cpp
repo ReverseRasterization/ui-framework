@@ -1,7 +1,13 @@
 /*
     TODO:
 
-    Add pointer to editable text boxes
+    Rewrite the dynamic font sizing system, it sucks ass :(
+
+    Add tails to editable text boxes
+    Make it so that the user can use the arrow key to edit text in the text boxes
+
+    Add text alignment for text boxes
+
 */
 
 #include <iostream>
@@ -92,6 +98,7 @@ int main()
     Image* img = new Image({50.f, 50.f}, Layout::Alignment::CENTER);
     img->setCellOccupancy(2);
     img->setImage(Image::TileTexture(&buttonSet, {64, 0}, {32, 32}));
+    img->setOutline(Outline(5.f, sf::Color::Red, {50.f, 50.f}));
 
     btn->onClick = [&]() {
         tbox->setString("");
