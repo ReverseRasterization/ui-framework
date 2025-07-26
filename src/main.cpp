@@ -87,7 +87,7 @@ int main()
     Textbox* tbox = new Textbox("", &font, {100.f, 25.f}, true, Textbox::ANY, sf::Color::White, 0.04, sf::Color::Black, sf::Color::Red, 0.05f);
     tbox->setAlignment(Layout::Alignment::CENTER);
     tbox->setOutline(Outline(5.f, sf::Color::Red, tbox->getSize()));
-    tbox->setPlaceholderText("Type here");
+    tbox->setPlaceholderText("Please type here");
 
     Button* btn = new Button({50.f, 50.f}, Layout::Alignment::CENTER, Button::Text("CLEAR", &font, 4, sf::Color::White, sf::Color::Black, 0.2f));
     btn->setCellOccupancy(1);

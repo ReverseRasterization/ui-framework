@@ -20,8 +20,14 @@ sf::Color tuneColor(sf::Color color, float factor)
 
 void Textbox::togglePlaceholder(bool toggle)
 {
-    toggle ? m_text.setFillColor(tuneColor(m_textColor, 1.8f)): m_text.setFillColor(m_textColor);
-    adjustTextDisplay(); // this will actually just display the placeholder text
+    if (toggle)
+    {
+        m_text.setString(m_placeholderText);
+        m_text.setFillColor(tuneColor(m_textColor, 1.8f));
+    }else {
+        m_text.setFillColor(m_textColor);
+    }
+    adjustTextDisplay();
 }
 
 void Textbox::centerText()
@@ -32,65 +38,20 @@ void Textbox::centerText()
 }
 
 void Textbox::adjustTextDisplay()
-{
+{    
     const sf::Vector2f backgroundSize = m_background.getSize();
+    const float padding = backgroundSize.x * m_padding_ratio;
+    const float maxFontSize = backgroundSize.y - (padding * 2);
 
-    int padding = backgroundSize.x * m_padding_ratio;
-    
-    const int charSize = backgroundSize.y - (padding * 2);
-    m_text.setCharacterSize(charSize);
+    m_text.setCharacterSize(maxFontSize);
 
-    const int maxWidth = backgroundSize.x - (padding * 2);
-    int currentWidth = 0;
+    /* TODO:
+        1. Make text resize
+        2. Make text wrap
+    */
 
-    std::string displayString;
 
-    auto calculateFittingSubstring = [&](const std::string source, bool reverse) -> std::string {
-        if (reverse) // means the textbox is selected
-        {
-            for (int i = source.size() - 1; i >= 0; --i)
-            {
-                int advance = m_font->getGlyph(m_textContents[i], m_text.getCharacterSize(), false, m_text.getOutlineThickness()).advance;
-            
-                if (currentWidth + advance > maxWidth)
-                {
-                    return source.substr(i + 1);
-                }
 
-                currentWidth += advance;
-            }
-
-            return source + tailChar;
-        }else { // the textbox is not selected
-            for (int i = 0; i < source.size(); i++)
-            {
-                int advance = m_font->getGlyph(source[i], m_text.getCharacterSize(), false, m_text.getOutlineThickness()).advance;
-
-                if (currentWidth + advance > maxWidth)
-                {
-                    return source.substr(0, i);
-                }
-
-                currentWidth += advance;
-            }
-
-            return source;
-        }
-
-        return "";
-    };
-
-    if (selected)
-    {
-        displayString = calculateFittingSubstring(m_textContents, true);
-    }else {
-        const std::string& base = (m_textContents.empty() && !m_placeholderText.empty()) 
-                                  ? m_placeholderText 
-                                  : m_textContents;
-        displayString = calculateFittingSubstring(base, false);
-    }
-
-    m_text.setString(displayString);
     centerText();
 }
 
@@ -236,3 +197,66 @@ void Textbox::setPlaceholderText(std::string placeholder_text)
     if (m_textContents.empty())
         togglePlaceholder(true);
 }
+
+// void Textbox::adjustTextDisplay()
+// {    
+//     const sf::Vector2f backgroundSize = m_background.getSize();
+
+//     float padding = backgroundSize.x * m_padding_ratio;
+    
+//     const int charSize = backgroundSize.y - (padding * 2);
+//     m_text.setCharacterSize(charSize);
+
+//     const int maxWidth = backgroundSize.x - (padding * 2);
+//     int currentWidth = 0;
+
+//     std::string displayString;
+
+//     auto calculateFittingSubstring = [&](const std::string source, bool reverse) -> std::string {
+//         if (reverse) // means the textbox is selected
+//         {
+//             for (int i = source.size() - 1; i >= 0; --i)
+//             {
+//                 int advance = m_font->getGlyph(m_textContents[i], m_text.getCharacterSize(), false, m_text.getOutlineThickness()).advance;
+            
+//                 if (currentWidth + advance > maxWidth)
+//                 {
+//                     return source.substr(i + 1);
+//                 }
+
+//                 currentWidth += advance;
+//             }
+
+//             return source + tailChar;
+//         }else { // the textbox is not selected
+//             for (int i = 0; i < source.size(); i++)
+//             {
+//                 int advance = m_font->getGlyph(source[i], m_text.getCharacterSize(), false, m_text.getOutlineThickness()).advance;
+
+//                 if (currentWidth + advance > maxWidth)
+//                 {
+//                     return source.substr(0, i);
+//                 }
+
+//                 currentWidth += advance;
+//             }
+
+//             return source;
+//         }
+
+//         return "";
+//     };
+
+//     if (selected)
+//     {
+//         displayString = calculateFittingSubstring(m_textContents, true);
+//     }else {
+//         const std::string& base = (m_textContents.empty() && !m_placeholderText.empty()) 
+//                                   ? m_placeholderText 
+//                                   : m_textContents;
+//         displayString = calculateFittingSubstring(base, false);
+//     }
+
+//     m_text.setString(displayString);
+//     centerText();
+// }
