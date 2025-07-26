@@ -1,13 +1,12 @@
 /*
     TODO:
 
-    Rewrite the dynamic font sizing system, it sucks ass :(
-
-    Add tails to editable text boxes
+    Fix issue where the placeholder text gets cut off because its too long, instead just resize it
     Make it so that the user can use the arrow key to edit text in the text boxes
 
-    Add text alignment for text boxes
+    Add max characters option to text boxes
 
+    Add text alignment for text boxes
 */
 
 #include <iostream>
@@ -85,7 +84,7 @@ int main()
     frame.setOutline(Outline(10.f, sf::Color::Blue, {500.f, 300.f}));
     frame.setAlignment(Layout::Alignment::CENTER);
 
-    Textbox* tbox = new Textbox("", &font, {100.f, 25.f}, true, Textbox::ANY, sf::Color::White, 4, sf::Color::Black, sf::Color::Red, 0.05f);
+    Textbox* tbox = new Textbox("", &font, {100.f, 25.f}, true, Textbox::ANY, sf::Color::White, 0.04, sf::Color::Black, sf::Color::Red, 0.05f);
     tbox->setAlignment(Layout::Alignment::CENTER);
     tbox->setOutline(Outline(5.f, sf::Color::Red, tbox->getSize()));
     tbox->setPlaceholderText("Type here");

@@ -1,6 +1,7 @@
 #include "textbox.h"
 #include <algorithm>
 #include <iostream>
+#include <cmath>
 
 sf::Color tuneColor(sf::Color color, float factor)
 {
@@ -19,97 +20,78 @@ sf::Color tuneColor(sf::Color color, float factor)
 
 void Textbox::togglePlaceholder(bool toggle)
 {
-    if (toggle)
-    {
-        m_text.setFillColor(tuneColor(m_textColor, 1.8f));
-        m_text.setString(m_placeholderText);
-        adjustText();
-    }else {
-        m_text.setFillColor(m_textColor);
-        m_text.setString(m_textContents);
-        adjustText();
-    }
+    toggle ? m_text.setFillColor(tuneColor(m_textColor, 1.8f)): m_text.setFillColor(m_textColor);
+    adjustTextDisplay(); // this will actually just display the placeholder text
 }
 
-
-void Textbox::adjustText(bool overrideFitting)
+void Textbox::centerText()
 {
-    /*
-        Character size in SFML is the vertical space the glyphs are expected to occupy
-
-        Glyph Properties:
-        
-            advance: how much to move the pen horizontally after drawing the glyph. ** Most accurate for calculating the bounds of the whole text
-            bounds: the bounding box of the glyph.
-            textureRect: the region in the font texture.
-    */
-
-    // sf::Vector2f backgroundSize = m_background.getSize();
-
-    
-    // sf::FloatRect textBounds = m_text.getGlobalBounds();
-
-    // sf::Vector2f t_tl_corner = textBounds.position;
-    // sf::Vector2f t_br_corner = textBounds.position + textBounds.size;
-
-    // sf::Vector2f b_tl_corner = m_background.getPosition();
-    // sf::Vector2f b_br_corner = m_background.getPosition() + m_background.getSize();
-
-    // if (t_tl_corner.x < b_tl_corner.x ||
-    //     t_br_corner.x > b_br_corner.x)
-    // {
-    //     debugRect.setFillColor(sf::Color::Red);
-    // }else {
-    //     debugRect.setFillColor(sf::Color::Green);
-    // }
-
-    // int totalAdvance = 0;
-    // for (char c : m_text.getString())
-    // {
-    //     totalAdvance += m_font->getGlyph(c, m_text.getCharacterSize(), false, m_outline.getThickness()).advance;
-    // }
-
-    // float scale = m_background.getSize().x / totalAdvance;
-    // m_text.setCharacterSize(scale * 100);
-
-
-    // std::cout << "Width: " << totalAdvance << "\n     Bound Width: " << textBounds.size.x << "\n";
- 
-
-    
-
-    // debugRect.setSize({textBounds.size.x, textBounds.size.y});
-    // debugRect.setPosition(textBounds.position);
-
-    sf::Vector2f backgroundSize = m_background.getSize();
-
-    if (!overrideFitting)
-    {
-        // Set base size and outline FIRST
-        m_text.setCharacterSize(100);
-        m_text.setOutlineThickness(100 * m_outlineRatio);
-
-        sf::FloatRect textBounds = m_text.getLocalBounds();
-
-        float scaleX = (backgroundSize.x - m_padding * 2) / textBounds.size.x;
-        float scaleY = (backgroundSize.y - m_padding * 2) / textBounds.size.y;
-        float scale = std::min(scaleX, scaleY);
-
-        float nSize = std::clamp(100 * scale, 1.1f, 256.f);
-
-        m_text.setCharacterSize(nSize);
-        m_text.setOutlineThickness(nSize * m_outlineRatio);
-    }
-
-    // Centering
     sf::FloatRect newBounds = m_text.getLocalBounds();
     m_text.setOrigin({newBounds.position.x + newBounds.size.x / 2.f, newBounds.position.y + newBounds.size.y / 2.f});
-    m_text.setPosition(m_background.getPosition() + (backgroundSize / 2.f));
+    m_text.setPosition(m_background.getPosition() + (m_background.getSize() / 2.f));
+}
 
-    // Debug rect
-    newBounds = m_text.getGlobalBounds();
-    debugRect.setSize({newBounds.size.x, newBounds.size.y});
-    debugRect.setPosition({newBounds.position.x, newBounds.position.y});
+void Textbox::adjustTextDisplay()
+{
+    const sf::Vector2f backgroundSize = m_background.getSize();
+
+    int padding = backgroundSize.x * m_padding_ratio;
+    
+    const int charSize = backgroundSize.y - (padding * 2);
+    m_text.setCharacterSize(charSize);
+
+    const int maxWidth = backgroundSize.x - (padding * 2);
+    int currentWidth = 0;
+
+    std::string displayString;
+
+    auto calculateFittingSubstring = [&](const std::string source, bool reverse) -> std::string {
+        if (reverse) // means the textbox is selected
+        {
+            for (int i = source.size() - 1; i >= 0; --i)
+            {
+                int advance = m_font->getGlyph(m_textContents[i], m_text.getCharacterSize(), false, m_text.getOutlineThickness()).advance;
+            
+                if (currentWidth + advance > maxWidth)
+                {
+                    return source.substr(i + 1);
+                }
+
+                currentWidth += advance;
+            }
+
+            return source + tailChar;
+        }else { // the textbox is not selected
+            for (int i = 0; i < source.size(); i++)
+            {
+                int advance = m_font->getGlyph(source[i], m_text.getCharacterSize(), false, m_text.getOutlineThickness()).advance;
+
+                if (currentWidth + advance > maxWidth)
+                {
+                    return source.substr(0, i);
+                }
+
+                currentWidth += advance;
+            }
+
+            return source;
+        }
+
+        return "";
+    };
+
+    if (selected)
+    {
+        displayString = calculateFittingSubstring(m_textContents, true);
+    }else {
+        const std::string& base = (m_textContents.empty() && !m_placeholderText.empty()) 
+                                  ? m_placeholderText 
+                                  : m_textContents;
+        displayString = calculateFittingSubstring(base, false);
+    }
+
+    m_text.setString(displayString);
+    centerText();
 }
 
 Textbox::Textbox
@@ -120,7 +102,7 @@ Textbox::Textbox
             bool is_mutable, 
             Rule rule,
             sf::Color backgroundColor, 
-            unsigned int padding, 
+            float padding_ratio, 
             sf::Color fill_color, 
             sf::Color outline_color,
             float outline_ratio
@@ -133,7 +115,7 @@ Textbox::Textbox
     m_backgroundColor(backgroundColor),
     m_textColor(fill_color),
     m_outlineRatio(outline_ratio),
-    m_padding(padding),
+    m_padding_ratio(padding_ratio),
     m_rule(rule)
 {
     m_background.setFillColor(backgroundColor);
@@ -163,13 +145,13 @@ void Textbox::setSize(sf::Vector2f new_size)
 {
     m_background.setOutlineThickness(m_outline.adjust(new_size));
     m_background.setSize(new_size);
-    adjustText();
+    adjustTextDisplay();
 }
 
 void Textbox::setPosition(sf::Vector2f new_position)
 {
     m_background.setPosition(new_position);
-    adjustText(true);
+    centerText();
 }
 
 void Textbox::setString(std::string new_string)
@@ -178,13 +160,12 @@ void Textbox::setString(std::string new_string)
 
     selected ? m_text.setString(new_string + tailChar) : m_text.setString(new_string);
     
-
     if (!selected && new_string.empty())
     {
         togglePlaceholder(true);
     }
     
-    adjustText();
+    adjustTextDisplay();
 }
 
 void Textbox::handleClick()
@@ -199,7 +180,7 @@ void Textbox::handleClick()
     m_background.setFillColor(tuneColor(m_backgroundColor, .8f));
 
     m_text.setString(m_textContents + tailChar);
-    adjustText();
+    adjustTextDisplay();
 }
 
 void Textbox::clickOff()
@@ -244,8 +225,6 @@ void Textbox::handleKey(char32_t character)
             }
         }
     }
-
-    std::cout << m_font->getGlyph(character, m_text.getCharacterSize(), false, m_outline.getThickness()).advance << '\n';
 
     setString(m_textContents);
 }

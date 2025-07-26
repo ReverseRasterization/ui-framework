@@ -53,7 +53,7 @@ class Textbox: public Element
             bool is_mutable = false,
             Rule rule = ANY,
             sf::Color backgroundColor = sf::Color::White, 
-            unsigned int padding = 4, 
+            float padding_ratio = 0.04, 
             sf::Color fill_color = sf::Color::Black, 
             sf::Color outline_color = sf::Color::Black,
             float outline_ratio = 0.f // relative to the character size
@@ -61,7 +61,7 @@ class Textbox: public Element
 
     private:
 
-        void togglePlaceholder(bool toggle);
+        
 
         // m_alignment is here from the Elements class
         Outline m_outline{0.f, sf::Color::Black, {0.f, 0.f}};
@@ -86,7 +86,9 @@ class Textbox: public Element
 
         Rule m_rule = ANY;
 
-        float m_padding;
+        float m_padding_ratio;
 
-        void adjustText(bool overrideFitting = false);
+        void adjustTextDisplay();
+        void centerText();
+        void togglePlaceholder(bool toggle);
 };
