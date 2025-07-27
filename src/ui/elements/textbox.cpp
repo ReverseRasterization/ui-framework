@@ -176,6 +176,7 @@ void Textbox::disableMutability()
 void Textbox::setString(std::string new_string)
 {
     m_textContents = new_string;
+    highlighted = false;
     
     if (!selected && new_string.empty())
     {
