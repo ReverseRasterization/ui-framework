@@ -1,11 +1,6 @@
 /*
     TODO:
 
-    Fix issue where the placeholder text gets cut off because its too long, instead just resize it
-    Make it so that the user can use the arrow key to edit text in the text boxes
-
-    Add max characters option to text boxes
-
     Add text alignment for text boxes
 */
 
@@ -84,10 +79,11 @@ int main()
     frame.setOutline(Outline(10.f, sf::Color::Blue, {500.f, 300.f}));
     frame.setAlignment(Layout::Alignment::CENTER);
 
-    Textbox* tbox = new Textbox("", &font, {100.f, 25.f}, true, Textbox::ANY, sf::Color::White, 0.04, sf::Color::Black, sf::Color::Red, 0.05f);
+    Textbox* tbox = new Textbox("", &font, {100.f, 25.f}, sf::Color::White, 0.04, sf::Color::Black, sf::Color::Red, 0.05f);
+    tbox->enableMutability(3);
     tbox->setAlignment(Layout::Alignment::CENTER);
     tbox->setOutline(Outline(5.f, sf::Color::Red, tbox->getSize()));
-    tbox->setPlaceholderText("Please type here");
+    tbox->setPlaceholderText("Type here");
 
     Button* btn = new Button({50.f, 50.f}, Layout::Alignment::CENTER, Button::Text("CLEAR", &font, 4, sf::Color::White, sf::Color::Black, 0.2f));
     btn->setCellOccupancy(1);
@@ -175,7 +171,23 @@ int main()
                     if (currTextbox && target.txbx != currTextbox) currTextbox->clickOff();
 
                     currTextbox = target.txbx;
-                    target.txbx->handleClick();
+                    target.txbx->handleClick(mousePos);
+                }
+            }
+
+            if (event->is<sf::Event::KeyPressed>())
+            {
+                if (!currTextbox)
+                   continue;
+
+                
+
+                if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left))
+                {
+                    currTextbox->shiftFocus(-1);
+                }else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right))
+                {
+                    currTextbox->shiftFocus(1);
                 }
             }
 
@@ -213,7 +225,7 @@ iElement getInteractiveFromPosition(sf::Vector2f pos, Frame& active_frame)
         }
     }else if (result.isTextbox())
     {
-        if(result.txbx->isInteractive())
+        if(result.txbx->getMutable())
         {
             return result;
         }

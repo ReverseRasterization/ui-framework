@@ -27,7 +27,17 @@ void Textbox::togglePlaceholder(bool toggle)
     }else {
         m_text.setFillColor(m_textColor);
     }
-    adjustTextDisplay();
+    displayText();
+}
+
+void Textbox::updateHighlight()
+{
+    if (!highlighted)
+        return;
+
+    sf::FloatRect bounds = m_text.getGlobalBounds();
+    highlightRect.setPosition(bounds.position);
+    highlightRect.setSize(bounds.size);
 }
 
 void Textbox::centerText()
@@ -37,22 +47,49 @@ void Textbox::centerText()
     m_text.setPosition(m_background.getPosition() + (m_background.getSize() / 2.f));
 }
 
-void Textbox::adjustTextDisplay()
+void Textbox::displayText()
 {    
     const sf::Vector2f backgroundSize = m_background.getSize();
-    const float padding = backgroundSize.x * m_padding_ratio;
-    const float maxFontSize = backgroundSize.y - (padding * 2);
+    const float padding = backgroundSize.x * m_paddingRatio;
+    float maxFontSize = backgroundSize.y - (padding * 2);
 
     m_text.setCharacterSize(maxFontSize);
 
-    /* TODO:
-        1. Make text resize
-        2. Make text wrap
-    */
+    // Getting text contents
 
+    std::string str;
 
+    if (selected)
+    {
+        str = m_textContents;
+        str.insert(focusPosition, 1, tailChar);
+    }else {
+        if (m_textContents.empty() && isMutable)
+        {
+            str = m_placeholderText;
+        }else {
+            str = m_textContents;
+        }
+    }
+
+    m_text.setString(str);
+    centerText();
+
+    // Resizing the text
+
+    sf::FloatRect bounds = m_text.getGlobalBounds();
+    const float availableWidth = backgroundSize.x - (padding * 2);
+    float nFontSize = maxFontSize;
+
+    while (bounds.size.x > availableWidth && nFontSize > 1)
+    {
+        nFontSize--;
+        m_text.setCharacterSize(nFontSize);
+        bounds = m_text.getGlobalBounds();
+    }
 
     centerText();
+    updateHighlight();
 }
 
 Textbox::Textbox
@@ -60,8 +97,6 @@ Textbox::Textbox
             std::string text, 
             sf::Font* font, 
             sf::Vector2f size,
-            bool is_mutable, 
-            Rule rule,
             sf::Color backgroundColor, 
             float padding_ratio, 
             sf::Color fill_color, 
@@ -71,15 +106,15 @@ Textbox::Textbox
     m_text(*font, text, 0),
     m_font(font),
     m_textContents(text),
-    isMutable(is_mutable),
     m_background(size),
     m_backgroundColor(backgroundColor),
     m_textColor(fill_color),
     m_outlineRatio(outline_ratio),
-    m_padding_ratio(padding_ratio),
-    m_rule(rule)
+    m_paddingRatio(padding_ratio),
+    focusPosition(text.size())
 {
     m_background.setFillColor(backgroundColor);
+    highlightRect.setFillColor(sf::Color::Blue);
     m_text.setFillColor(fill_color);
     m_text.setOutlineColor(outline_color);
     // set outline thickness will be taken care of whenever the adjust text function is called
@@ -106,42 +141,69 @@ void Textbox::setSize(sf::Vector2f new_size)
 {
     m_background.setOutlineThickness(m_outline.adjust(new_size));
     m_background.setSize(new_size);
-    adjustTextDisplay();
+    displayText();
 }
 
 void Textbox::setPosition(sf::Vector2f new_position)
 {
     m_background.setPosition(new_position);
     centerText();
+    updateHighlight();
+}
+
+void Textbox::enableMutability(int max_characters)
+{
+    if (isMutable)
+        return;
+
+    isMutable = true;
+    maxCharacters = max_characters;
+}
+
+void Textbox::disableMutability()
+{
+    if (!isMutable)
+        return;
+
+    isMutable = false;
+
+    if (selected)
+    {
+        clickOff();
+    }
 }
 
 void Textbox::setString(std::string new_string)
 {
     m_textContents = new_string;
-
-    selected ? m_text.setString(new_string + tailChar) : m_text.setString(new_string);
     
     if (!selected && new_string.empty())
     {
         togglePlaceholder(true);
     }
     
-    adjustTextDisplay();
+    displayText();
 }
 
-void Textbox::handleClick()
+void Textbox::handleClick(sf::Vector2f mousePos)
 {
-    if (!isMutable || selected){return;}
+    if (!isMutable){return;}
 
-    togglePlaceholder(false);
+    if (highlighted)
+        highlighted = false;
 
-    sf::Color currColor = m_background.getFillColor();
+    if (!selected)
+    {
+        togglePlaceholder(false);
+        
+        selected = true;
+        m_background.setFillColor(tuneColor(m_backgroundColor, .8f));
+    }
+
+    focusPosition = std::ceil(getCharIndexFromPosition(mousePos));
     
-    selected = true;
-    m_background.setFillColor(tuneColor(m_backgroundColor, .8f));
-
-    m_text.setString(m_textContents + tailChar);
-    adjustTextDisplay();
+    displayText();
+    
 }
 
 void Textbox::clickOff()
@@ -157,35 +219,112 @@ void Textbox::clickOff()
     setString(m_textContents);
 }
 
-void Textbox::handleKey(char32_t character)
+bool Textbox::containsRestriction(Restriction restriction)
 {
-    if (character >= 128 || character == 13)
-        return;
-
-    if (character == 8) // backspace
+    for (Restriction r : m_restrictions)
     {
-        if (!m_textContents.empty())
+        if (r == restriction)
         {
-            m_textContents.pop_back();
-        }
-    }else {
-        if (m_rule == ANY)
-        {
-            m_textContents += character;
-        }else if (m_rule == NUMBERS_ONLY)
-        {
-            if (character >= 48 && character <= 57)
-            {
-                m_textContents += character;
-            }
-        }else // letters only
-        {
-            if ((character >= 65 && character <= 90) || (character >= 97 && character <= 122))
-            {
-                m_textContents += character;
-            }
+            return true;
         }
     }
+
+    return false;
+}
+
+void Textbox::handleKey(char32_t character)
+{
+    /*
+        CTRL + A = 1
+        Backspace = 8
+        Space = 20
+        Numbers = 48-57
+        Letters = 65-90 (uppercase), 97-122 (lowercase)
+    */
+
+    constexpr char32_t BACKSPACE = 8;
+    constexpr char32_t SPACE = 20;
+    constexpr char32_t ENTER = 13;
+    constexpr char32_t SELECT_ALL = 1;
+
+    if (character >= 128 || character == ENTER)
+        return;
+
+    if (character == SELECT_ALL && !highlighted)
+    {
+        highlighted = true;
+        
+        updateHighlight();
+        
+        return;
+    }
+
+    if (character == BACKSPACE) // backspace
+    {
+        if (highlighted)
+        {
+            m_textContents = "";
+            focusPosition = 0;
+
+            highlighted = false;
+        }else if (focusPosition > 0)
+        {
+            m_textContents.erase(focusPosition-1, 1);
+            focusPosition--;
+        }
+
+        setString(m_textContents);
+
+        return;
+    }
+
+    bool isSpace = character == SPACE;
+    bool isNumber = character >= U'0' && character <= U'9';
+    bool isUpper = character >= U'A' && character <= U'Z';
+    bool isLower = character >= U'a' && character <= U'z';
+    bool isLetter = isUpper || isLower;
+    bool isSpecial = !isSpace && !isNumber && !isLetter;
+
+    bool insert = false;
+
+    if (isSpace)
+    {
+        insert = !containsRestriction(NO_SPACE);
+    }
+    else if (isNumber)
+    {
+        insert = !containsRestriction(NO_NUMBERS);
+    }
+    else if (isUpper)
+    {
+        insert = !containsRestriction(NO_LETTERS) && !containsRestriction(NO_UPPER_CASE);
+    }
+    else if (isLower)
+    {
+        insert = !containsRestriction(NO_LETTERS) && !containsRestriction(NO_LOWER_CASE);
+    }
+    else if (isSpecial)
+    {
+        insert = !containsRestriction(NO_SPECIAL_CHARACTERS);
+    }
+
+    if (m_textContents.size() >= maxCharacters && !highlighted)
+        return;
+
+    if (insert)
+    {
+
+        if (highlighted)
+        {
+            m_textContents = "";
+            focusPosition = 0;
+
+            highlighted = false;
+        }
+
+        m_textContents.insert(focusPosition, 1, character);
+        focusPosition++;
+    } 
 
     setString(m_textContents);
 }
@@ -198,65 +337,61 @@ void Textbox::setPlaceholderText(std::string placeholder_text)
         togglePlaceholder(true);
 }
 
-// void Textbox::adjustTextDisplay()
-// {    
-//     const sf::Vector2f backgroundSize = m_background.getSize();
+void Textbox::shiftFocus(int direction)
+{
+    if (direction == 1)
+    {
+        if (focusPosition < m_textContents.size())
+        {
+            focusPosition++;
+        }
+    }else if (direction == -1)
+    {
+        if (focusPosition > 0)
+        {
+            focusPosition--;
+        }
+    }
 
-//     float padding = backgroundSize.x * m_padding_ratio;
-    
-//     const int charSize = backgroundSize.y - (padding * 2);
-//     m_text.setCharacterSize(charSize);
+    displayText();
+}   
 
-//     const int maxWidth = backgroundSize.x - (padding * 2);
-//     int currentWidth = 0;
+float Textbox::getCharIndexFromPosition(sf::Vector2f position)
+{
+    if (m_textContents.empty())
+        return 0;
 
-//     std::string displayString;
+    // Localize the position (relative to the top-right corner of the text itself)
+    position -= m_text.getGlobalBounds().position;
 
-//     auto calculateFittingSubstring = [&](const std::string source, bool reverse) -> std::string {
-//         if (reverse) // means the textbox is selected
-//         {
-//             for (int i = source.size() - 1; i >= 0; --i)
-//             {
-//                 int advance = m_font->getGlyph(m_textContents[i], m_text.getCharacterSize(), false, m_text.getOutlineThickness()).advance;
-            
-//                 if (currentWidth + advance > maxWidth)
-//                 {
-//                     return source.substr(i + 1);
-//                 }
+    if (position.x < 0)
+    {
+        return 0;
+    }
 
-//                 currentWidth += advance;
-//             }
+    float i = 0;
+    int currx = 0;
 
-//             return source + tailChar;
-//         }else { // the textbox is not selected
-//             for (int i = 0; i < source.size(); i++)
-//             {
-//                 int advance = m_font->getGlyph(source[i], m_text.getCharacterSize(), false, m_text.getOutlineThickness()).advance;
+    for (char c : m_textContents)
+    {
+        float advance = m_font->getGlyph(c, m_text.getCharacterSize(), false, m_text.getOutlineThickness()).advance;
 
-//                 if (currentWidth + advance > maxWidth)
-//                 {
-//                     return source.substr(0, i);
-//                 }
+        if (position.x >= currx && position.x <= currx + advance)
+        {
+            // Localize the positon relative to the character
+            float localX = position.x - currx;
 
-//                 currentWidth += advance;
-//             }
+            if (localX >= advance / 2.f)
+            {
+                return i + .5;
+            }
 
-//             return source;
-//         }
+            return i;
+        } 
 
-//         return "";
-//     };
+        currx += advance;
+        i+=1.f;
+    }
 
-//     if (selected)
-//     {
-//         displayString = calculateFittingSubstring(m_textContents, true);
-//     }else {
-//         const std::string& base = (m_textContents.empty() && !m_placeholderText.empty()) 
-//                                   ? m_placeholderText 
-//                                   : m_textContents;
-//         displayString = calculateFittingSubstring(base, false);
-//     }
-
-//     m_text.setString(displayString);
-//     centerText();
-// }
+    return i;
+}

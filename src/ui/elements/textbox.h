@@ -1,20 +1,28 @@
 #pragma once
 
 #include "element.h"
+#include <vector>
 
 class Textbox: public Element
 {
     public:
-        enum Rule
+        enum Restriction
         {
-            NUMBERS_ONLY,
-            LETTERS_ONLY,
-            ANY
+            NO_LETTERS,
+            NO_UPPER_CASE,
+            NO_LOWER_CASE,
+            NO_NUMBERS,
+            NO_SPACE,
+            NO_SPECIAL_CHARACTERS
         };
 
         void draw(sf::RenderWindow& window)
         {
             window.draw(m_background);
+
+            if (highlighted)
+                window.draw(highlightRect);
+
             window.draw(debugRect);
             window.draw(m_text);
         }
@@ -34,24 +42,26 @@ class Textbox: public Element
 
         // setAlignment and getAlignment are here from the Elements class
 
-        void toggleMutability(bool toggle) {isMutable = toggle;}
-        bool isInteractive(){return isMutable;}
+        void enableMutability(int max_characters = 1000);
+        void disableMutability();
+        bool getMutable(){return isMutable;}
 
         void setString(std::string new_string);
         std::string getString(){return m_textContents;}
 
-        void setRule(Rule new_rule) {m_rule = new_rule;}
+        void addRestriction(Restriction restriction) {m_restrictions.push_back(restriction);}
+        void setRestrictions(std::vector<Restriction> restrictions) {m_restrictions = restrictions;}
 
-        void handleClick();
+        void handleClick(sf::Vector2f mousePos);
         void clickOff();
         void handleKey(char32_t character);
+
+        void shiftFocus(int direction); // 1 is forward, -1 is backwards
         
         Textbox(
             std::string text, 
             sf::Font* font, 
             sf::Vector2f size = {100.f, 25.f},
-            bool is_mutable = false,
-            Rule rule = ANY,
             sf::Color backgroundColor = sf::Color::White, 
             float padding_ratio = 0.04, 
             sf::Color fill_color = sf::Color::Black, 
@@ -68,6 +78,7 @@ class Textbox: public Element
         float m_outlineRatio = 0.f;
 
         sf::RectangleShape m_background;
+        sf::RectangleShape highlightRect;
         sf::RectangleShape debugRect;
         sf::Color m_backgroundColor;
 
@@ -78,17 +89,24 @@ class Textbox: public Element
         std::string m_textContents;
         std::string m_placeholderText;
 
-        char tailChar = ']';
-        int tailOffset = 0;
+        char tailChar = '|';
+        int focusPosition = 0; // basically where the text is inserted upon a keystroke
 
         bool isMutable = false;
         bool selected = false;
+        bool highlighted = false;
 
-        Rule m_rule = ANY;
+        std::vector<Restriction> m_restrictions; // priority is first to back
 
-        float m_padding_ratio;
+        float m_paddingRatio;
+        int maxCharacters;
 
-        void adjustTextDisplay();
+        void displayText();
         void centerText();
         void togglePlaceholder(bool toggle);
+        void updateHighlight();
+
+        float getCharIndexFromPosition(sf::Vector2f position); // if the outcome is .5 then that means place the cursor after, otherwise, before
+
+        bool containsRestriction(Restriction restriction);
 };
