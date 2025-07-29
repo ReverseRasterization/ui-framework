@@ -80,7 +80,7 @@ int main()
     frame.setAlignment(Layout::Alignment::CENTER);
 
     Textbox* tbox = new Textbox("", &font, {100.f, 25.f}, sf::Color::White, 0.04, sf::Color::Black, sf::Color::Red, 0.05f);
-    tbox->enableMutability(3);
+    tbox->enableMutability();
     tbox->setAlignment(Layout::Alignment::CENTER);
     tbox->setOutline(Outline(5.f, sf::Color::Red, tbox->getSize()));
     tbox->setPlaceholderText("Type here");
