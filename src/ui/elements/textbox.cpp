@@ -30,16 +30,6 @@ void Textbox::togglePlaceholder(bool toggle)
     displayText();
 }
 
-void Textbox::updateHighlight()
-{
-    if (!highlighted)
-        return;
-
-    sf::FloatRect bounds = m_text.getGlobalBounds();
-    highlightRect.setPosition(bounds.position);
-    highlightRect.setSize(bounds.size);
-}
-
 void Textbox::centerText()
 {
     sf::FloatRect newBounds = m_text.getLocalBounds();
@@ -89,7 +79,7 @@ void Textbox::displayText()
     }
 
     centerText();
-    updateHighlight();
+    if (highlighted){ highlight(highlight_start, highlight_end); }
 }
 
 Textbox::Textbox
@@ -114,7 +104,6 @@ Textbox::Textbox
     focusPosition(text.size())
 {
     m_background.setFillColor(backgroundColor);
-    highlightRect.setFillColor(sf::Color::Blue);
     m_text.setFillColor(fill_color);
     m_text.setOutlineColor(outline_color);
     // set outline thickness will be taken care of whenever the adjust text function is called
@@ -148,16 +137,18 @@ void Textbox::setPosition(sf::Vector2f new_position)
 {
     m_background.setPosition(new_position);
     centerText();
-    updateHighlight();
+    highlight(highlight_start, highlight_end);
 }
 
-void Textbox::enableMutability(int max_characters)
+void Textbox::enableMutability(int max_characters, sf::Color highlight_color)
 {
     if (isMutable)
         return;
 
     isMutable = true;
     maxCharacters = max_characters;
+
+    highlightRect.setFillColor(highlight_color);
 }
 
 void Textbox::disableMutability()
@@ -255,7 +246,7 @@ void Textbox::handleKey(char32_t character)
     {
         highlighted = true;
         
-        updateHighlight();
+        highlight(0, m_textContents.size()-1);
         
         return;
     }
@@ -264,8 +255,8 @@ void Textbox::handleKey(char32_t character)
     {
         if (highlighted)
         {
-            m_textContents = "";
-            focusPosition = 0;
+            m_textContents.erase(highlight_start, highlight_end-highlight_start + 1);
+            focusPosition = highlight_start;
 
             highlighted = false;
         }else if (focusPosition > 0)
@@ -317,8 +308,8 @@ void Textbox::handleKey(char32_t character)
 
         if (highlighted)
         {
-            m_textContents = "";
-            focusPosition = 0;
+            m_textContents.erase(highlight_start, highlight_end-highlight_start + 1);
+            focusPosition = highlight_start;
 
             highlighted = false;
         }
@@ -395,4 +386,68 @@ float Textbox::getCharIndexFromPosition(sf::Vector2f position)
     }
 
     return i;
+}
+
+sf::Vector2f Textbox::getPositionFromCharacterIndex(unsigned int index)
+{
+    if (index >= m_textContents.size())
+        return {0.f, 0.f};
+
+    sf::Vector2f textPos = m_text.getGlobalBounds().position;
+
+    int a = 0;
+
+    if (index >= focusPosition)
+    {
+        a += m_font->getGlyph(tailChar, m_text.getCharacterSize(), false, m_text.getOutlineThickness()).advance;
+    }
+
+    for (int i = 0; i < index; i++)
+    {
+        a += m_font->getGlyph(m_textContents[i], m_text.getCharacterSize(), false, m_text.getOutlineThickness()).advance;
+    }
+
+    return {textPos.x + a, textPos.y};
+}
+
+bool isHalf(float num)
+{
+    return std::floor(num) < num;
+}
+
+void Textbox::highlight(sf::Vector2f start_position, sf::Vector2f end_position)
+{
+    float rawStartIndex = getCharIndexFromPosition(start_position); // returns x.5 if the mouse is atleast halfway through the character
+    float rawEndIndex = getCharIndexFromPosition(end_position);
+
+    // the mouse position has to be atleast half of the character in order for it to highlight
+    // if the mouse starts off more than halfway through a character, that character isn't included
+    
+    // if the start position starts at less than half of the character but then ends at more than halfway, the character is included
+
+    
+
+    if (rawEndIndex < rawStartIndex)
+    {
+        std::swap(rawStartIndex, rawEndIndex);
+    }
+
+    highlight(rawStartIndex, rawEndIndex);
+}
+
+void Textbox::highlight(unsigned int start_index, unsigned int end_index)
+{
+    std::cout << "Index Range: [" << start_index << ", " << end_index << "]\n";
+    if (start_index >= m_textContents.size() || end_index >= m_textContents.size())
+        return;
+
+    highlighted = true;
+    highlight_start = start_index;
+    highlight_end = end_index;
+
+    sf::Vector2f tlPos = getPositionFromCharacterIndex(start_index);
+    sf::Vector2f brPos = getPositionFromCharacterIndex(end_index) + (sf::Vector2f) { (float) m_font->getGlyph(m_textContents[end_index], m_text.getCharacterSize(), false, m_text.getOutlineThickness()).advance, (float) m_text.getCharacterSize()};
+
+    highlightRect.setSize(brPos - tlPos);
+    highlightRect.setPosition(tlPos);
 }

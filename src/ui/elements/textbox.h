@@ -42,7 +42,7 @@ class Textbox: public Element
 
         // setAlignment and getAlignment are here from the Elements class
 
-        void enableMutability(int max_characters = 1000);
+        void enableMutability(int max_characters = 1000, sf::Color highlight_color = sf::Color::Blue);
         void disableMutability();
         bool getMutable(){return isMutable;}
 
@@ -55,6 +55,9 @@ class Textbox: public Element
         void handleClick(sf::Vector2f mousePos);
         void clickOff();
         void handleKey(char32_t character);
+
+        void highlight(sf::Vector2f start_position, sf::Vector2f end_position);
+        void highlight(unsigned int start_index, unsigned int end_index);
 
         void shiftFocus(int direction); // 1 is forward, -1 is backwards
         
@@ -96,6 +99,9 @@ class Textbox: public Element
         bool selected = false;
         bool highlighted = false;
 
+        unsigned int highlight_start = 0;
+        unsigned int highlight_end = 0;
+
         std::vector<Restriction> m_restrictions; // priority is first to back
 
         float m_paddingRatio;
@@ -104,9 +110,10 @@ class Textbox: public Element
         void displayText();
         void centerText();
         void togglePlaceholder(bool toggle);
-        void updateHighlight();
 
         float getCharIndexFromPosition(sf::Vector2f position); // if the outcome is .5 then that means place the cursor after, otherwise, before
+        sf::Vector2f getPositionFromCharacterIndex(unsigned int index); // returns the top left position
+        
 
         bool containsRestriction(Restriction restriction);
 };

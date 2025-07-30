@@ -1,7 +1,12 @@
 /*
+
     TODO:
 
-    Add text alignment for text boxes
+        TEXTBOXES:
+
+            Add text wrapping
+            Add text alignment customization
+            Add undo & redo support
 */
 
 #include <iostream>
@@ -74,36 +79,37 @@ int main()
         return -1;
     }
 
-    Frame frame(&window, sf::Color::White, GridLayout(3, 1));
+    Frame frame(&window, sf::Color::White, GridLayout(1, 1));
     frame.setSize({500.f, 300.f});
     frame.setOutline(Outline(10.f, sf::Color::Blue, {500.f, 300.f}));
     frame.setAlignment(Layout::Alignment::CENTER);
 
-    Textbox* tbox = new Textbox("", &font, {100.f, 25.f}, sf::Color::White, 0.04, sf::Color::Black, sf::Color::Red, 0.05f);
-    tbox->enableMutability();
+    Textbox* tbox = new Textbox("", &font, {100.f, 100.f}, sf::Color::White, 0.04, sf::Color::Black, sf::Color::Red, 0.05f);
+    tbox->enableMutability(1000, sf::Color::Green);
     tbox->setAlignment(Layout::Alignment::CENTER);
     tbox->setOutline(Outline(5.f, sf::Color::Red, tbox->getSize()));
     tbox->setPlaceholderText("Type here");
 
-    Button* btn = new Button({50.f, 50.f}, Layout::Alignment::CENTER, Button::Text("CLEAR", &font, 4, sf::Color::White, sf::Color::Black, 0.2f));
-    btn->setCellOccupancy(1);
-    btn->setOutline(Outline(5.f, sf::Color::Black, btn->getSize()));
-    btn->setBackgroundColor(sf::Color::Red); 
+    // Button* btn = new Button({50.f, 50.f}, Layout::Alignment::CENTER, Button::Text("CLEAR", &font, 4, sf::Color::White, sf::Color::Black, 0.2f));
+    // btn->setCellOccupancy(1);
+    // btn->setOutline(Outline(5.f, sf::Color::Black, btn->getSize()));
+    // btn->setBackgroundColor(sf::Color::Red); 
 
-    Image* img = new Image({50.f, 50.f}, Layout::Alignment::CENTER);
-    img->setCellOccupancy(2);
-    img->setImage(Image::TileTexture(&buttonSet, {64, 0}, {32, 32}));
-    img->setOutline(Outline(5.f, sf::Color::Red, {50.f, 50.f}));
+    // Image* img = new Image({50.f, 50.f}, Layout::Alignment::CENTER);
+    // img->setCellOccupancy(2);
+    // img->setImage(Image::TileTexture(&buttonSet, {64, 0}, {32, 32}));
+    // img->setOutline(Outline(5.f, sf::Color::Red, {50.f, 50.f}));
 
-    btn->onClick = [&]() {
-        tbox->setString("");
-    };
+    // btn->onClick = [&]() {
+    //     tbox->setString("");
+    // };
 
     frame.addChild(tbox);
-    frame.addChild(btn);
-    frame.addChild(img);
+    // frame.addChild(btn);
+    // frame.addChild(img);
 
     Textbox* currTextbox {nullptr};
+    sf::Vector2f highlightStartPos = {-1.f, -1.f};
 
     const auto btnCursor = sf::Cursor::createFromSystem(sf::Cursor::Type::Hand).value();
     const auto txtCursor = sf::Cursor::createFromSystem(sf::Cursor::Type::Text).value();
@@ -143,11 +149,27 @@ int main()
                 }else if (currTextbox == nullptr) {
                     window.setMouseCursor(defaultCursor);
                 }
+
+                if (currTextbox && highlightStartPos.x > -1.f)
+                {
+                    currTextbox->highlight(highlightStartPos, mousePos);
+                }
+
             }
 
             if (event->is<sf::Event::MouseButtonPressed>())
             {
+                if (!sf::Mouse::isButtonPressed(sf::Mouse::Button::Left))
+                    continue;
+
                 sf::Vector2f mousePos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
+
+                // Textbox highlighting
+                if (currTextbox && currTextbox->getGlobalBounds().contains(mousePos))
+                {
+                    highlightStartPos = mousePos;
+                    std::cout << "Down\n";
+                }
 
                 iElement target = getInteractiveFromPosition(window.mapPixelToCoords(sf::Mouse::getPosition(window)), frame);
 
@@ -173,6 +195,15 @@ int main()
                     currTextbox = target.txbx;
                     target.txbx->handleClick(mousePos);
                 }
+            }
+
+            if (event->is<sf::Event::MouseButtonReleased>())
+            {
+                if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left) || !currTextbox || highlightStartPos.x == -1.f)
+                    continue;
+
+                highlightStartPos = {-1.f, -1.f};
+                std::cout << "Lifted\n";
             }
 
             if (event->is<sf::Event::KeyPressed>())
