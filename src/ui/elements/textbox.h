@@ -23,7 +23,9 @@ class Textbox: public Element
             if (highlighted)
                 window.draw(highlightRect);
 
-            window.draw(tailRect);
+            if (selected)
+                window.draw(tailRect);
+
             window.draw(m_text);
         }
 
@@ -34,6 +36,7 @@ class Textbox: public Element
         sf::FloatRect getGlobalBounds() {return m_background.getGlobalBounds();}
 
         void setBackgroundColor(sf::Color color) {m_background.setFillColor(color); m_backgroundColor = color;}
+        void setTailColor(sf::Color color) {tailRect.setFillColor(color);}
 
         void setPlaceholderText(std::string placeholder_text);
         
@@ -74,8 +77,6 @@ class Textbox: public Element
 
     private:
 
-        
-
         // m_alignment is here from the Elements class
         Outline m_outline{0.f, sf::Color::Black, {0.f, 0.f}};
         float m_outlineRatio = 0.f;
@@ -109,10 +110,9 @@ class Textbox: public Element
         void displayText();
         void centerText();
         void togglePlaceholder(bool toggle);
+        void setTail();
 
         float getCharIndexFromPosition(sf::Vector2f position); // if the outcome is .5 then that means place the cursor after, otherwise, before
-        sf::Vector2f getPositionFromCharacterIndex(unsigned int index); // returns the top left position
         
-
         bool containsRestriction(Restriction restriction);
 };

@@ -37,6 +37,17 @@ void Textbox::centerText()
     m_text.setPosition(m_background.getPosition() + (m_background.getSize() / 2.f));
 }
 
+void Textbox::setTail()
+{
+    sf::Vector2f bgSize = m_background.getSize();
+
+    float height = std::clamp(m_text.getCharacterSize() * 1.25f, 0.f, bgSize.y - ((bgSize.y * m_paddingRatio)*2));
+    sf::Vector2f charPos = m_text.findCharacterPos(focusPosition);
+
+    tailRect.setSize({bgSize.x * 0.02f, height});
+    tailRect.setPosition({charPos.x, m_background.getPosition().y + (bgSize.y - height) / 2.f});
+}
+
 void Textbox::displayText()
 {    
     const sf::Vector2f backgroundSize = m_background.getSize();
@@ -66,23 +77,40 @@ void Textbox::displayText()
 
     // Resizing the text
 
-    sf::FloatRect bounds = m_text.getGlobalBounds();
     const float availableWidth = backgroundSize.x - (padding * 2);
-    float nFontSize = maxFontSize;
+    unsigned int low = 1;
+    unsigned int high = maxFontSize;
+    unsigned int bestFit = low;
 
-    while (bounds.size.x > availableWidth && nFontSize > 1)
+    int steps = 0;
+
+    while (low <= high)
     {
-        nFontSize--;
-        m_text.setCharacterSize(nFontSize);
-        bounds = m_text.getGlobalBounds();
+        unsigned int mid = (low + high)/2;
+        m_text.setCharacterSize(mid);
+        unsigned int new_width = m_text.getGlobalBounds().size.x;
+
+        if (new_width <= availableWidth)
+        {
+            bestFit = mid;
+            low = mid + 1; // shoot for higher baby, it's somewhere
+        }else {
+            high = mid - 1; // fuck we messed up, we gotta go bald (lower)
+        }
+
+        steps++;
     }
 
+    m_text.setCharacterSize(bestFit);
+    std::cout << "Took " << steps << " steps\n";
+
     centerText();
+
     if (highlighted){ highlight(highlight_start, highlight_end); }
 
     if (selected)
     {
-        tailRect.setPosition(getPositionFromCharacterIndex(focusPosition));
+        setTail();
     }
 }
 
@@ -110,6 +138,8 @@ Textbox::Textbox
     m_background.setFillColor(backgroundColor);
     m_text.setFillColor(fill_color);
     m_text.setOutlineColor(outline_color);
+    tailRect.setFillColor(sf::Color::Black);
+
     // set outline thickness will be taken care of whenever the adjust text function is called
     
     setType(T_TXBX);
@@ -135,17 +165,19 @@ void Textbox::setSize(sf::Vector2f new_size)
     m_background.setOutlineThickness(m_outline.adjust(new_size));
     m_background.setSize(new_size);
 
-    std::cout << "Tail thickness: " << new_size.x * 0.02f << '\n';
-    tailRect.setSize({new_size.x * 0.02f, new_size.y - ((new_size.y * m_paddingRatio)*2)});
-
-    displayText();
+    displayText(); // this'll set the tail too
 }
 
 void Textbox::setPosition(sf::Vector2f new_position)
 {
     m_background.setPosition(new_position);
     centerText();
-    highlight(highlight_start, highlight_end);
+
+    if(highlighted) 
+        highlight(highlight_start, highlight_end);
+
+    if(selected)
+        setTail();
 }
 
 void Textbox::enableMutability(int max_characters, sf::Color highlight_color)
@@ -182,7 +214,7 @@ void Textbox::setString(std::string new_string)
         togglePlaceholder(true);
     }
     
-    displayText();
+    displayText(); // this'll set the tail
 }
 
 void Textbox::handleClick(sf::Vector2f mousePos)
@@ -202,7 +234,7 @@ void Textbox::handleClick(sf::Vector2f mousePos)
 
     focusPosition = std::ceil(getCharIndexFromPosition(mousePos));
     
-    displayText();
+    displayText(); // this'll set the tail
     
 }
 
@@ -353,7 +385,7 @@ void Textbox::shiftFocus(int direction)
         }
     }
 
-    displayText();
+    displayText(); // this'll set the tail
 }   
 
 float Textbox::getCharIndexFromPosition(sf::Vector2f position)
@@ -396,23 +428,6 @@ float Textbox::getCharIndexFromPosition(sf::Vector2f position)
     return i;
 }
 
-sf::Vector2f Textbox::getPositionFromCharacterIndex(unsigned int index)
-{
-    if (index >= m_textContents.size())
-        return {0.f, 0.f};
-
-    sf::Vector2f textPos = m_text.getGlobalBounds().position;
-
-    int a = 0;
-
-    for (int i = 0; i < index; i++)
-    {
-        a += m_font->getGlyph(m_textContents[i], m_text.getCharacterSize(), false, m_text.getOutlineThickness()).advance;
-    }
-
-    return {textPos.x + a, textPos.y};
-}
-
 bool isHalf(float num)
 {
     return std::floor(num) < num;
@@ -449,6 +464,8 @@ void Textbox::highlight(sf::Vector2f start_position, sf::Vector2f end_position, 
     if (isHalf(rawEndIndex))
     {
         rawEndIndex = std::floor(rawEndIndex);
+    }else {
+        rawEndIndex--;
     }
 
     highlight(rawStartIndex, rawEndIndex);
@@ -456,7 +473,6 @@ void Textbox::highlight(sf::Vector2f start_position, sf::Vector2f end_position, 
 
 void Textbox::highlight(unsigned int start_index, unsigned int end_index)
 {
-    std::cout << "Index Range: [" << start_index << ", " << end_index << "]\n";
     if (start_index >= m_textContents.size() || end_index >= m_textContents.size())
         return;
 
@@ -464,8 +480,8 @@ void Textbox::highlight(unsigned int start_index, unsigned int end_index)
     highlight_start = start_index;
     highlight_end = end_index;
 
-    sf::Vector2f tlPos = getPositionFromCharacterIndex(start_index);
-    sf::Vector2f brPos = getPositionFromCharacterIndex(end_index) + (sf::Vector2f) { (float) m_font->getGlyph(m_textContents[end_index], m_text.getCharacterSize(), false, m_text.getOutlineThickness()).advance, (float) m_text.getCharacterSize()};
+    sf::Vector2f tlPos = m_text.findCharacterPos(start_index);
+    sf::Vector2f brPos = m_text.findCharacterPos(end_index) + (sf::Vector2f) { (float) m_font->getGlyph(m_textContents[end_index], m_text.getCharacterSize(), false, m_text.getOutlineThickness()).advance, (float) m_text.getCharacterSize()};
 
     highlightRect.setSize(brPos - tlPos);
     highlightRect.setPosition(tlPos);

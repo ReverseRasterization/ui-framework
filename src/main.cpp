@@ -4,11 +4,11 @@
 
         TEXTBOXES:
 
-            Make it so that the fuckass tail isn't so fuckass
-            Fix the fuckass highlighting
             Add text wrapping
             Add text alignment customization
             Add undo & redo support
+            Add copy and paste support
+            Add support for hidden characters
 */
 
 #include <iostream>
@@ -90,6 +90,10 @@ int main()
     debugTBox->setAlignment(Layout::Alignment::CENTER);
     debugTBox->setCellOccupancy(0);
 
+    Textbox* iTBox = new Textbox("i: 0", &font, {25.f, 25.f});
+    iTBox->setAlignment(Layout::Alignment::BOTTOM_RIGHT);
+    iTBox->setCellOccupancy(0);
+
     Textbox* tbox = new Textbox("", &font, {100.f, 100.f}, sf::Color::White, 0.04, sf::Color::Black, sf::Color::Red, 0.05f);
     tbox->enableMutability(1000, sf::Color::Green);
     tbox->setAlignment(Layout::Alignment::CENTER);
@@ -115,6 +119,7 @@ int main()
 
     frame.addChild(tbox);
     frame.addChild(debugTBox);
+    frame.addChild(iTBox);
     // frame.addChild(btn);
     // frame.addChild(img);
 
@@ -124,6 +129,8 @@ int main()
     const auto btnCursor = sf::Cursor::createFromSystem(sf::Cursor::Type::Hand).value();
     const auto txtCursor = sf::Cursor::createFromSystem(sf::Cursor::Type::Text).value();
     const auto defaultCursor = sf::Cursor::createFromSystem(sf::Cursor::Type::Arrow).value();
+
+    int i = 0;
 
     while (window.isOpen())
     {
@@ -163,6 +170,8 @@ int main()
                 if (currTextbox && highlightStartPos.x > -1.f)
                 {
                     currTextbox->highlight(highlightStartPos, mousePos, debugTBox);
+                    i++;
+                    iTBox->setString("i: " + std::to_string(i));
                 }
 
             }
