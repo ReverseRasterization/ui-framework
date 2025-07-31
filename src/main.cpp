@@ -4,6 +4,8 @@
 
         TEXTBOXES:
 
+            Make it so that the fuckass tail isn't so fuckass
+            Fix the fuckass highlighting
             Add text wrapping
             Add text alignment customization
             Add undo & redo support
@@ -79,16 +81,23 @@ int main()
         return -1;
     }
 
-    Frame frame(&window, sf::Color::White, GridLayout(1, 1));
+    Frame frame(&window, sf::Color::White, GridLayout(2, 1));
     frame.setSize({500.f, 300.f});
     frame.setOutline(Outline(10.f, sf::Color::Blue, {500.f, 300.f}));
     frame.setAlignment(Layout::Alignment::CENTER);
+
+    Textbox* debugTBox = new Textbox("", &font, {300.f, 100.f});
+    debugTBox->setAlignment(Layout::Alignment::CENTER);
+    debugTBox->setCellOccupancy(0);
 
     Textbox* tbox = new Textbox("", &font, {100.f, 100.f}, sf::Color::White, 0.04, sf::Color::Black, sf::Color::Red, 0.05f);
     tbox->enableMutability(1000, sf::Color::Green);
     tbox->setAlignment(Layout::Alignment::CENTER);
     tbox->setOutline(Outline(5.f, sf::Color::Red, tbox->getSize()));
     tbox->setPlaceholderText("Type here");
+    tbox->setCellOccupancy(1);
+
+    
 
     // Button* btn = new Button({50.f, 50.f}, Layout::Alignment::CENTER, Button::Text("CLEAR", &font, 4, sf::Color::White, sf::Color::Black, 0.2f));
     // btn->setCellOccupancy(1);
@@ -105,6 +114,7 @@ int main()
     // };
 
     frame.addChild(tbox);
+    frame.addChild(debugTBox);
     // frame.addChild(btn);
     // frame.addChild(img);
 
@@ -152,7 +162,7 @@ int main()
 
                 if (currTextbox && highlightStartPos.x > -1.f)
                 {
-                    currTextbox->highlight(highlightStartPos, mousePos);
+                    currTextbox->highlight(highlightStartPos, mousePos, debugTBox);
                 }
 
             }

@@ -23,7 +23,7 @@ class Textbox: public Element
             if (highlighted)
                 window.draw(highlightRect);
 
-            window.draw(debugRect);
+            window.draw(tailRect);
             window.draw(m_text);
         }
 
@@ -56,7 +56,7 @@ class Textbox: public Element
         void clickOff();
         void handleKey(char32_t character);
 
-        void highlight(sf::Vector2f start_position, sf::Vector2f end_position);
+        void highlight(sf::Vector2f start_position, sf::Vector2f end_position, Textbox* debugTextbox);
         void highlight(unsigned int start_index, unsigned int end_index);
 
         void shiftFocus(int direction); // 1 is forward, -1 is backwards
@@ -82,7 +82,7 @@ class Textbox: public Element
 
         sf::RectangleShape m_background;
         sf::RectangleShape highlightRect;
-        sf::RectangleShape debugRect;
+        sf::RectangleShape tailRect; // the width is 2% of the background width
         sf::Color m_backgroundColor;
 
         sf::Color m_textColor;
@@ -92,7 +92,6 @@ class Textbox: public Element
         std::string m_textContents;
         std::string m_placeholderText;
 
-        char tailChar = '|';
         int focusPosition = 0; // basically where the text is inserted upon a keystroke
 
         bool isMutable = false;

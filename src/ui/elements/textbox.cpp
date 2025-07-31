@@ -52,7 +52,6 @@ void Textbox::displayText()
     if (selected)
     {
         str = m_textContents;
-        str.insert(focusPosition, 1, tailChar);
     }else {
         if (m_textContents.empty() && isMutable)
         {
@@ -80,6 +79,11 @@ void Textbox::displayText()
 
     centerText();
     if (highlighted){ highlight(highlight_start, highlight_end); }
+
+    if (selected)
+    {
+        tailRect.setPosition(getPositionFromCharacterIndex(focusPosition));
+    }
 }
 
 Textbox::Textbox
@@ -130,6 +134,10 @@ void Textbox::setSize(sf::Vector2f new_size)
 {
     m_background.setOutlineThickness(m_outline.adjust(new_size));
     m_background.setSize(new_size);
+
+    std::cout << "Tail thickness: " << new_size.x * 0.02f << '\n';
+    tailRect.setSize({new_size.x * 0.02f, new_size.y - ((new_size.y * m_paddingRatio)*2)});
+
     displayText();
 }
 
@@ -397,11 +405,6 @@ sf::Vector2f Textbox::getPositionFromCharacterIndex(unsigned int index)
 
     int a = 0;
 
-    if (index >= focusPosition)
-    {
-        a += m_font->getGlyph(tailChar, m_text.getCharacterSize(), false, m_text.getOutlineThickness()).advance;
-    }
-
     for (int i = 0; i < index; i++)
     {
         a += m_font->getGlyph(m_textContents[i], m_text.getCharacterSize(), false, m_text.getOutlineThickness()).advance;
@@ -415,7 +418,7 @@ bool isHalf(float num)
     return std::floor(num) < num;
 }
 
-void Textbox::highlight(sf::Vector2f start_position, sf::Vector2f end_position)
+void Textbox::highlight(sf::Vector2f start_position, sf::Vector2f end_position, Textbox* debugTextbox)
 {
     float rawStartIndex = getCharIndexFromPosition(start_position); // returns x.5 if the mouse is atleast halfway through the character
     float rawEndIndex = getCharIndexFromPosition(end_position);
@@ -425,11 +428,27 @@ void Textbox::highlight(sf::Vector2f start_position, sf::Vector2f end_position)
     
     // if the start position starts at less than half of the character but then ends at more than halfway, the character is included
 
-    
+    debugTextbox->setString("S_RAW: " + std::to_string(rawStartIndex) + " | E_RAW: " + std::to_string(rawEndIndex));
+
+    if (rawStartIndex == rawEndIndex)
+    {
+        highlighted = false;
+        return;
+    }
 
     if (rawEndIndex < rawStartIndex)
     {
         std::swap(rawStartIndex, rawEndIndex);
+    }
+
+    if (isHalf(rawStartIndex))
+    {
+        rawStartIndex = std::ceil(rawStartIndex);
+    }
+
+    if (isHalf(rawEndIndex))
+    {
+        rawEndIndex = std::floor(rawEndIndex);
     }
 
     highlight(rawStartIndex, rawEndIndex);
