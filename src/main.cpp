@@ -4,9 +4,8 @@
 
         TEXTBOXES:
 
-            Fix the getCharIndexFromPosition function.
-                Make it so that if the mouse clicks in whitespace, it'll stick to it's respective line 
-
+            Fix bug where if you highlight and press any of the control keys or whatever it deletes the text
+            
             Fix highlighting whenever there are new lines
                 Implement a line tracking system that tracks how many lines there are based on index
                 Make it so that the highlighting system makes rectangles for each line   
@@ -108,7 +107,7 @@ int main()
     frame.setOutline(Outline(10.f, sf::Color::Blue, {500.f, 300.f}));
     frame.setAlignment(Layout::Alignment::CENTER);
 
-    Textbox* tbox = new Textbox("Hello\nWorld!\nHow does it go?", &font, {100.f, 100.f}, sf::Color::White, 0.04,Textbox::TextAlignment::CENTER, sf::Color::Black, sf::Color::Red, 0.05f);
+    Textbox* tbox = new Textbox("", &font, {100.f, 100.f}, sf::Color::White, 0.04,Textbox::TextAlignment::CENTER, sf::Color::Black, sf::Color::Red, 0.05f);
     tbox->enableMutability(1000, sf::Color::Green);
     tbox->setAlignment(Layout::Alignment::CENTER);
     tbox->setOutline(Outline(5.f, sf::Color::Red, tbox->getSize()));
@@ -192,7 +191,6 @@ int main()
                 if (currTextbox && currTextbox->getGlobalBounds().contains(mousePos))
                 {
                     highlightStartPos = mousePos;
-                    std::cout << "Down\n";
                 }
 
                 iElement target = getInteractiveFromPosition(window.mapPixelToCoords(sf::Mouse::getPosition(window)), frame);
@@ -227,15 +225,12 @@ int main()
                     continue;
 
                 highlightStartPos = {-1.f, -1.f};
-                std::cout << "Lifted\n";
             }
 
             if (event->is<sf::Event::KeyPressed>())
             {
                 if (!currTextbox)
                    continue;
-
-                
 
                 if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left))
                 {

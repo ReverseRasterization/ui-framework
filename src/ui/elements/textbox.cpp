@@ -32,14 +32,14 @@ sf::FloatRect Textbox::Line::getBounds(const sf::Text& m_text)
     sf::Vector2f endCharPos = m_text.findCharacterPos(endIndex);
 
     retRect.position = startCharPos;
-    retRect.size = (endCharPos - startCharPos) + (sf::Vector2f) {m_text.getFont().getGlyph(m_text.getString()[endIndex], m_text.getCharacterSize(), false, m_text.getOutlineThickness()).advance, m_text.getCharacterSize()};
+    retRect.size = (endCharPos - startCharPos) + (sf::Vector2f) {m_text.getFont().getGlyph(m_text.getString()[endIndex], m_text.getCharacterSize(), false, m_text.getOutlineThickness()).advance, (float) m_text.getCharacterSize()};
 
     return retRect; // todo: test this mf
 }
 
 #pragma endregion
 
-# pragma region PRIVATE_FUNCTIONS
+#pragma region PRIVATE_FUNCTIONS
 
 std::vector<Textbox::Line*> Textbox::getLinesByIndexRange(unsigned int i_begin, unsigned int i_end)
 {
@@ -84,6 +84,8 @@ std::vector<Textbox::Line*> Textbox::getLinesByIndexRange(unsigned int i_begin, 
     {
         endResidence = m_lines.size()-1;
     }
+
+    return retVec;
 }
 
 void Textbox::positionText()
@@ -204,19 +206,61 @@ float Textbox::getCharIndexFromPosition(sf::Vector2f position)
     if (m_textContents.empty())
         return 0;
 
-    unsigned int i = 0;
     
-    float best_i = 0;
-    float minDistance = std::numeric_limits<float>::max();
-    bool half = false;
-
     debugCells = {};
+
+    // Get which line corresponds with the y axis
+    Line targetLine(0,m_textContents.size()-1);
+
+    if (m_lines.size() > 0) // multi line
+    {
+        bool found = false;
+
+        for (Line line : m_lines)
+        {
+            sf::FloatRect bounds = line.getBounds(m_text);
+
+            float topy = bounds.position.y;
+            float bottomy = bounds.position.y + bounds.size.y;
+
+            if (topy <= position.y && bottomy >= position.y)
+            {
+                targetLine = line;
+                found = true;
+                break;
+            }
+        }
+
+        // If none found, if the mouse is above or below the text choose the first or last line
+        if (!found)
+        {
+            if (position.y <= m_text.getGlobalBounds().position.y) // above
+            {
+                targetLine = m_lines[0];
+            }else { // below
+                targetLine = m_lines[m_lines.size()-1];
+            }
+        }
+    }
+     
+    sf::FloatRect b = targetLine.getBounds(m_text);
+
+    // time to get to business baby
 
     unsigned int fontSize = m_text.getCharacterSize();
     float oThickness = m_text.getOutlineThickness();
 
-    for (char c : m_textContents)
+    float best_i = 0;
+    float minDistance = std::numeric_limits<float>::max();
+    bool half = false;
+
+    for (int i = targetLine.getStartIndex(); i <= targetLine.getEndIndex(); i++)
     {
+        char c = m_textContents[i];
+        
+        if (c == '\n')
+            continue;
+
         sf::Vector2f charPos = m_text.findCharacterPos(i) + (sf::Vector2f) {0.f, fontSize/2.f}; // the char pos is centered in the character
         float charAdvance = m_font->getGlyph(c, fontSize, false, oThickness).advance;
 
@@ -236,8 +280,6 @@ float Textbox::getCharIndexFromPosition(sf::Vector2f position)
                 half = false;
             }
         }
-
-        i++;
     }
 
     return half ? best_i + 0.5f : best_i;
@@ -258,7 +300,7 @@ bool Textbox::containsRestriction(Restriction restriction)
 
 #pragma endregion
 
-# pragma region PUBLIC_FUNCTIONS
+#pragma region PUBLIC_FUNCTIONS
 
 Textbox::Textbox
 (
@@ -314,7 +356,7 @@ Textbox::Textbox
             i++;
         }
 
-        m_lines.push_back(Line(start_i, i));
+        m_lines.push_back(Line(start_i, text.size()-1));
     }else {
         togglePlaceholder(true);
     }
@@ -426,13 +468,20 @@ void Textbox::handleKey(char32_t character)
 {
     /*
         CTRL + A = 1
+        CTRL + C = 3
+        CTRL + V = 22
+
         Backspace = 8
+        DEL = 127
         Space = 20
         Numbers = 48-57
         Letters = 65-90 (uppercase), 97-122 (lowercase)
     */
 
+    std::cout << (int) character << "\n";
+
     constexpr char32_t BACKSPACE = 8;
+    constexpr char32_t DELETE = 127;
     constexpr char32_t SPACE = 20;
     constexpr char32_t ENTER = 13;
     constexpr char32_t SELECT_ALL = 1;
@@ -440,8 +489,11 @@ void Textbox::handleKey(char32_t character)
     if (character >= 128 || character == ENTER)
         return;
 
-    if (character == SELECT_ALL && !highlighted)
+    if (character == SELECT_ALL)
     {
+        if (highlighted)
+            return;
+
         highlighted = true;
         
         highlight(0, m_textContents.size()-1);
@@ -449,7 +501,7 @@ void Textbox::handleKey(char32_t character)
         return;
     }
 
-    if (character == BACKSPACE) // backspace
+    if (character == BACKSPACE)
     {
         if (highlighted)
         {
@@ -466,6 +518,21 @@ void Textbox::handleKey(char32_t character)
         setString(m_textContents);
 
         return;
+    }
+
+    if (character == DELETE)
+    {
+        if (highlighted)
+        {
+            m_textContents.erase(highlight_start, highlight_end-highlight_start + 1);
+            focusPosition = highlight_start;
+
+            highlighted = false;
+        }
+        if (focusPosition < m_textContents.size())
+        {
+            m_textContents.erase(focusPosition + 1, 1);
+        }
     }
 
     bool isSpace = character == SPACE;
