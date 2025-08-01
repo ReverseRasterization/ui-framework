@@ -4,15 +4,37 @@
 
         TEXTBOXES:
 
-            Add text wrapping
+            Fix the getCharIndexFromPosition function.
+                Make it so that if the mouse clicks in whitespace, it'll stick to it's respective line 
+
+            Fix highlighting whenever there are new lines
+                Implement a line tracking system that tracks how many lines there are based on index
+                Make it so that the highlighting system makes rectangles for each line   
+
+            Implement the up and down arrows for the tail
+
+            Optimize the getCharIndexFromPosition function by reducing the number of characters it has to search through
+
             Add text alignment customization
             Add undo & redo support
             Add copy and paste support
             Add support for hidden characters
+            Add multiline support (mostly implemented just make it so that the user can make new lines in mutability)
+
+            Add scaling options
+                Text Wrapping
+                Text Wrapping w/ Expansion
+
+                Scroll effect
+
+                Resizing (which we already have just wanna list it out)
+
+        BUTTONS:
+
+            Fix buttons adjustText function to work just as the text box class does
 */
 
 #include <iostream>
-#include <format>
 
 #include <SFML/Graphics.hpp>
 
@@ -81,27 +103,16 @@ int main()
         return -1;
     }
 
-    Frame frame(&window, sf::Color::White, GridLayout(2, 1));
+    Frame frame(&window, sf::Color::White, GridLayout(1, 1));
     frame.setSize({500.f, 300.f});
     frame.setOutline(Outline(10.f, sf::Color::Blue, {500.f, 300.f}));
     frame.setAlignment(Layout::Alignment::CENTER);
 
-    Textbox* debugTBox = new Textbox("", &font, {300.f, 100.f});
-    debugTBox->setAlignment(Layout::Alignment::CENTER);
-    debugTBox->setCellOccupancy(0);
-
-    Textbox* iTBox = new Textbox("i: 0", &font, {25.f, 25.f});
-    iTBox->setAlignment(Layout::Alignment::BOTTOM_RIGHT);
-    iTBox->setCellOccupancy(0);
-
-    Textbox* tbox = new Textbox("", &font, {100.f, 100.f}, sf::Color::White, 0.04, sf::Color::Black, sf::Color::Red, 0.05f);
+    Textbox* tbox = new Textbox("Hello\nWorld!\nHow does it go?", &font, {100.f, 100.f}, sf::Color::White, 0.04,Textbox::TextAlignment::CENTER, sf::Color::Black, sf::Color::Red, 0.05f);
     tbox->enableMutability(1000, sf::Color::Green);
     tbox->setAlignment(Layout::Alignment::CENTER);
     tbox->setOutline(Outline(5.f, sf::Color::Red, tbox->getSize()));
     tbox->setPlaceholderText("Type here");
-    tbox->setCellOccupancy(1);
-
-    
 
     // Button* btn = new Button({50.f, 50.f}, Layout::Alignment::CENTER, Button::Text("CLEAR", &font, 4, sf::Color::White, sf::Color::Black, 0.2f));
     // btn->setCellOccupancy(1);
@@ -118,8 +129,6 @@ int main()
     // };
 
     frame.addChild(tbox);
-    frame.addChild(debugTBox);
-    frame.addChild(iTBox);
     // frame.addChild(btn);
     // frame.addChild(img);
 
@@ -129,8 +138,6 @@ int main()
     const auto btnCursor = sf::Cursor::createFromSystem(sf::Cursor::Type::Hand).value();
     const auto txtCursor = sf::Cursor::createFromSystem(sf::Cursor::Type::Text).value();
     const auto defaultCursor = sf::Cursor::createFromSystem(sf::Cursor::Type::Arrow).value();
-
-    int i = 0;
 
     while (window.isOpen())
     {
@@ -169,9 +176,7 @@ int main()
 
                 if (currTextbox && highlightStartPos.x > -1.f)
                 {
-                    currTextbox->highlight(highlightStartPos, mousePos, debugTBox);
-                    i++;
-                    iTBox->setString("i: " + std::to_string(i));
+                    currTextbox->highlight(highlightStartPos, mousePos);
                 }
 
             }

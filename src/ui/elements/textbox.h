@@ -16,6 +16,33 @@ class Textbox: public Element
             NO_SPECIAL_CHARACTERS
         };
 
+        enum TextAlignment
+        {
+            LEFT,
+            CENTER,
+            RIGHT
+        };
+
+        struct Line
+        {
+            unsigned int startIndex;
+            unsigned int endIndex;
+
+            unsigned int getStartIndex(){return startIndex;}
+            void setStartIndex(unsigned int i) {startIndex = i;}
+
+            unsigned int getEndIndex(){return endIndex;}
+            void setEndIndex(unsigned int i) {endIndex = i;}
+
+            Line(unsigned int start_index, unsigned int end_index)
+            :
+                startIndex(start_index),
+                endIndex(end_index)
+            {}
+
+            sf::FloatRect getBounds(const sf::Text& m_text);
+        };
+
         void draw(sf::RenderWindow& window)
         {
             window.draw(m_background);
@@ -25,6 +52,10 @@ class Textbox: public Element
 
             if (selected)
                 window.draw(tailRect);
+                for (sf::CircleShape cell : debugCells)
+                {
+                    window.draw(cell);
+                }
 
             window.draw(m_text);
         }
@@ -59,7 +90,7 @@ class Textbox: public Element
         void clickOff();
         void handleKey(char32_t character);
 
-        void highlight(sf::Vector2f start_position, sf::Vector2f end_position, Textbox* debugTextbox);
+        void highlight(sf::Vector2f start_position, sf::Vector2f end_position);
         void highlight(unsigned int start_index, unsigned int end_index);
 
         void shiftFocus(int direction); // 1 is forward, -1 is backwards
@@ -70,6 +101,7 @@ class Textbox: public Element
             sf::Vector2f size = {100.f, 25.f},
             sf::Color backgroundColor = sf::Color::White, 
             float padding_ratio = 0.04, 
+            TextAlignment text_alignment = TextAlignment::CENTER,
             sf::Color fill_color = sf::Color::Black, 
             sf::Color outline_color = sf::Color::Black,
             float outline_ratio = 0.f // relative to the character size
@@ -84,8 +116,8 @@ class Textbox: public Element
         sf::RectangleShape m_background;
         sf::RectangleShape highlightRect;
         sf::RectangleShape tailRect; // the width is 2% of the background width
-        sf::Color m_backgroundColor;
 
+        sf::Color m_backgroundColor;
         sf::Color m_textColor;
         sf::Text m_text;
         sf::Font* m_font;
@@ -93,26 +125,33 @@ class Textbox: public Element
         std::string m_textContents;
         std::string m_placeholderText;
 
+        std::vector<Line> m_lines;
+        std::vector<Line*> getLinesByIndexRange(unsigned int i_begin, unsigned int i_end); // returns nullptr by default
+
         int focusPosition = 0; // basically where the text is inserted upon a keystroke
 
         bool isMutable = false;
         bool selected = false;
-        bool highlighted = false;
 
+        bool highlighted = false;
         unsigned int highlight_start = 0;
         unsigned int highlight_end = 0;
 
         std::vector<Restriction> m_restrictions; // priority is first to back
 
         float m_paddingRatio;
+        TextAlignment m_textAlignment;
         int maxCharacters;
 
         void displayText();
-        void centerText();
+        void positionText();
         void togglePlaceholder(bool toggle);
         void setTail();
 
         float getCharIndexFromPosition(sf::Vector2f position); // if the outcome is .5 then that means place the cursor after, otherwise, before
         
         bool containsRestriction(Restriction restriction);
+
+        // temp
+        std::vector<sf::CircleShape> debugCells;
 };

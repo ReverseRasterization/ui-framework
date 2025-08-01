@@ -3,6 +3,8 @@
 #include <iostream>
 #include <cmath>
 
+#pragma region GENERAL_FUNCTIONS
+
 sf::Color tuneColor(sf::Color color, float factor)
 {
     auto adjust = [factor](u_int8_t c)
@@ -18,34 +20,85 @@ sf::Color tuneColor(sf::Color color, float factor)
     );
 }
 
-void Textbox::togglePlaceholder(bool toggle)
+#pragma endregion
+
+#pragma region LINE_FUNCTIONS
+
+sf::FloatRect Textbox::Line::getBounds(const sf::Text& m_text)
 {
-    if (toggle)
+    sf::FloatRect retRect;
+
+    sf::Vector2f startCharPos = m_text.findCharacterPos(startIndex);
+    sf::Vector2f endCharPos = m_text.findCharacterPos(endIndex);
+
+    retRect.position = startCharPos;
+    retRect.size = (endCharPos - startCharPos) + (sf::Vector2f) {m_text.getFont().getGlyph(m_text.getString()[endIndex], m_text.getCharacterSize(), false, m_text.getOutlineThickness()).advance, m_text.getCharacterSize()};
+
+    return retRect; // todo: test this mf
+}
+
+#pragma endregion
+
+# pragma region PRIVATE_FUNCTIONS
+
+std::vector<Textbox::Line*> Textbox::getLinesByIndexRange(unsigned int i_begin, unsigned int i_end)
+{
+    if (i_begin > m_lines.size()-1)
+        return {nullptr};
+
+    std::vector<Textbox::Line*> retVec {nullptr};
+
+    if (i_begin > i_end)
     {
-        m_text.setString(m_placeholderText);
-        m_text.setFillColor(tuneColor(m_textColor, 1.8f));
-    }else {
-        m_text.setFillColor(m_textColor);
+        std::swap(i_begin, i_end);
+    }    
+
+    // first find where the beginning index resides then find where the end index resides
+    int beginningResidence = -1;
+    int endResidence = -1;
+
+    unsigned int i = 0;
+    for (Line& line : m_lines)
+    {
+        if (line.getStartIndex() <= i_begin && line.getEndIndex() >= i_begin)
+        {
+            beginningResidence = i;
+        }
+        
+        if (line.getStartIndex() <= i_end && line.getEndIndex() >= i_end)
+        {
+            endResidence = i;
+            retVec.push_back(&line);
+            break;
+        }
+
+        if (beginningResidence > -1 && endResidence == -1) // if the beginning residence has been found but the end residence hasn't...
+        {
+            retVec.push_back(&line);
+        }
+
+        i++;
     }
-    displayText();
+
+    if (endResidence == -1) // if the end residence hasn't been found yet...
+    {
+        endResidence = m_lines.size()-1;
+    }
 }
 
-void Textbox::centerText()
+void Textbox::positionText()
 {
-    sf::FloatRect newBounds = m_text.getLocalBounds();
-    m_text.setOrigin({newBounds.position.x + newBounds.size.x / 2.f, newBounds.position.y + newBounds.size.y / 2.f});
-    m_text.setPosition(m_background.getPosition() + (m_background.getSize() / 2.f));
-}
+    if (m_textAlignment == TextAlignment::LEFT)
+    {
 
-void Textbox::setTail()
-{
-    sf::Vector2f bgSize = m_background.getSize();
+    }else if (m_textAlignment == TextAlignment::CENTER)
+    {
+        sf::FloatRect newBounds = m_text.getLocalBounds();
+        m_text.setOrigin({newBounds.position.x + newBounds.size.x / 2.f, newBounds.position.y + newBounds.size.y / 2.f});
+        m_text.setPosition(m_background.getPosition() + (m_background.getSize() / 2.f));
+    }else if (m_textAlignment == TextAlignment::RIGHT) {
 
-    float height = std::clamp(m_text.getCharacterSize() * 1.25f, 0.f, bgSize.y - ((bgSize.y * m_paddingRatio)*2));
-    sf::Vector2f charPos = m_text.findCharacterPos(focusPosition);
-
-    tailRect.setSize({bgSize.x * 0.02f, height});
-    tailRect.setPosition({charPos.x, m_background.getPosition().y + (bgSize.y - height) / 2.f});
+    }
 }
 
 void Textbox::displayText()
@@ -73,7 +126,7 @@ void Textbox::displayText()
     }
 
     m_text.setString(str);
-    centerText();
+    positionText();
 
     // Resizing the text
 
@@ -102,9 +155,8 @@ void Textbox::displayText()
     }
 
     m_text.setCharacterSize(bestFit);
-    std::cout << "Took " << steps << " steps\n";
 
-    centerText();
+    positionText();
 
     if (highlighted){ highlight(highlight_start, highlight_end); }
 
@@ -114,6 +166,100 @@ void Textbox::displayText()
     }
 }
 
+void Textbox::togglePlaceholder(bool toggle)
+{
+    if (toggle)
+    {
+        m_text.setString(m_placeholderText);
+        m_text.setFillColor(tuneColor(m_textColor, 1.8f));
+    }else {
+        m_text.setFillColor(m_textColor);
+    }
+    displayText();
+}
+
+void Textbox::setTail()
+{
+    sf::Vector2f bgSize = m_background.getSize();
+    sf::Vector2f bgPos = m_background.getPosition();
+
+
+    float padding = bgSize.y * m_paddingRatio;
+    float height = std::clamp(m_text.getCharacterSize() * 1.25f, 0.f, bgSize.y - (padding*2));
+    tailRect.setSize({bgSize.x * 0.02f, height});
+
+    sf::Vector2f charPos = m_text.findCharacterPos(focusPosition) - (sf::Vector2f) {m_text.getLetterSpacing(), 0.f};
+    charPos = {std::clamp(charPos.x, charPos.x, bgPos.x + bgSize.x - padding), charPos.y};
+
+    if (m_textContents.empty())
+    {   
+        tailRect.setPosition({charPos.x, m_background.getPosition().y + padding});
+    }else {
+        tailRect.setPosition({charPos.x, std::clamp(charPos.y, m_background.getPosition().y+padding, (m_background.getPosition().y + bgSize.y)-padding)});
+    }
+}
+
+float Textbox::getCharIndexFromPosition(sf::Vector2f position)
+{
+    if (m_textContents.empty())
+        return 0;
+
+    unsigned int i = 0;
+    
+    float best_i = 0;
+    float minDistance = std::numeric_limits<float>::max();
+    bool half = false;
+
+    debugCells = {};
+
+    unsigned int fontSize = m_text.getCharacterSize();
+    float oThickness = m_text.getOutlineThickness();
+
+    for (char c : m_textContents)
+    {
+        sf::Vector2f charPos = m_text.findCharacterPos(i) + (sf::Vector2f) {0.f, fontSize/2.f}; // the char pos is centered in the character
+        float charAdvance = m_font->getGlyph(c, fontSize, false, oThickness).advance;
+
+        sf::Vector2f delta = position - charPos;
+
+        float dist = delta.x * delta.x + delta.y * delta.y;
+
+        if (dist < minDistance)
+        {
+            minDistance = dist;
+            best_i = i;
+
+            if (position.x > charPos.x + charAdvance)
+            {
+                half = true;
+            }else {
+                half = false;
+            }
+        }
+
+        i++;
+    }
+
+    return half ? best_i + 0.5f : best_i;
+}
+
+bool Textbox::containsRestriction(Restriction restriction)
+{
+    for (Restriction r : m_restrictions)
+    {
+        if (r == restriction)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+#pragma endregion
+
+# pragma region PUBLIC_FUNCTIONS
+
 Textbox::Textbox
 (
             std::string text, 
@@ -121,6 +267,7 @@ Textbox::Textbox
             sf::Vector2f size,
             sf::Color backgroundColor, 
             float padding_ratio, 
+            TextAlignment text_alignment,
             sf::Color fill_color, 
             sf::Color outline_color,
             float outline_ratio
@@ -133,8 +280,10 @@ Textbox::Textbox
     m_textColor(fill_color),
     m_outlineRatio(outline_ratio),
     m_paddingRatio(padding_ratio),
+    m_textAlignment(text_alignment),
     focusPosition(text.size())
 {
+    // Set the colors of everything
     m_background.setFillColor(backgroundColor);
     m_text.setFillColor(fill_color);
     m_text.setOutlineColor(outline_color);
@@ -142,14 +291,36 @@ Textbox::Textbox
 
     // set outline thickness will be taken care of whenever the adjust text function is called
     
+    // As per the elements class
     setType(T_TXBX);
 
+    // Placeholder stufferoons and line setup
     if (!text.empty())
     {
         setString(text);
+
+        int start_i = 0;
+        int i = 0;
+
+        for (char c : text)
+        {
+            if (c == '\n')
+            {
+                m_lines.push_back(Line(start_i, i));
+
+                start_i = i + 1;
+            }
+
+            i++;
+        }
+
+        m_lines.push_back(Line(start_i, i));
     }else {
         togglePlaceholder(true);
     }
+
+    std::cout << "Total lines: " << m_lines.size() << '\n';
+
 }           
 
 void Textbox::setOutline(Outline outline)
@@ -171,7 +342,7 @@ void Textbox::setSize(sf::Vector2f new_size)
 void Textbox::setPosition(sf::Vector2f new_position)
 {
     m_background.setPosition(new_position);
-    centerText();
+    positionText();
 
     if(highlighted) 
         highlight(highlight_start, highlight_end);
@@ -249,19 +420,6 @@ void Textbox::clickOff()
     m_background.setFillColor(m_backgroundColor);
 
     setString(m_textContents);
-}
-
-bool Textbox::containsRestriction(Restriction restriction)
-{
-    for (Restriction r : m_restrictions)
-    {
-        if (r == restriction)
-        {
-            return true;
-        }
-    }
-
-    return false;
 }
 
 void Textbox::handleKey(char32_t character)
@@ -388,52 +546,12 @@ void Textbox::shiftFocus(int direction)
     displayText(); // this'll set the tail
 }   
 
-float Textbox::getCharIndexFromPosition(sf::Vector2f position)
-{
-    if (m_textContents.empty())
-        return 0;
-
-    // Localize the position (relative to the top-right corner of the text itself)
-    position -= m_text.getGlobalBounds().position;
-
-    if (position.x < 0)
-    {
-        return 0;
-    }
-
-    float i = 0;
-    int currx = 0;
-
-    for (char c : m_textContents)
-    {
-        float advance = m_font->getGlyph(c, m_text.getCharacterSize(), false, m_text.getOutlineThickness()).advance;
-
-        if (position.x >= currx && position.x <= currx + advance)
-        {
-            // Localize the positon relative to the character
-            float localX = position.x - currx;
-
-            if (localX >= advance / 2.f)
-            {
-                return i + .5;
-            }
-
-            return i;
-        } 
-
-        currx += advance;
-        i+=1.f;
-    }
-
-    return i;
-}
-
 bool isHalf(float num)
 {
     return std::floor(num) < num;
 }
 
-void Textbox::highlight(sf::Vector2f start_position, sf::Vector2f end_position, Textbox* debugTextbox)
+void Textbox::highlight(sf::Vector2f start_position, sf::Vector2f end_position)
 {
     float rawStartIndex = getCharIndexFromPosition(start_position); // returns x.5 if the mouse is atleast halfway through the character
     float rawEndIndex = getCharIndexFromPosition(end_position);
@@ -442,8 +560,6 @@ void Textbox::highlight(sf::Vector2f start_position, sf::Vector2f end_position, 
     // if the mouse starts off more than halfway through a character, that character isn't included
     
     // if the start position starts at less than half of the character but then ends at more than halfway, the character is included
-
-    debugTextbox->setString("S_RAW: " + std::to_string(rawStartIndex) + " | E_RAW: " + std::to_string(rawEndIndex));
 
     if (rawStartIndex == rawEndIndex)
     {
@@ -468,6 +584,9 @@ void Textbox::highlight(sf::Vector2f start_position, sf::Vector2f end_position, 
         rawEndIndex--;
     }
 
+    if (highlighted && rawStartIndex == highlight_start && rawEndIndex == highlight_end)
+        return;
+
     highlight(rawStartIndex, rawEndIndex);
 }
 
@@ -480,9 +599,26 @@ void Textbox::highlight(unsigned int start_index, unsigned int end_index)
     highlight_start = start_index;
     highlight_end = end_index;
 
+    // TODO: Line system
+
     sf::Vector2f tlPos = m_text.findCharacterPos(start_index);
     sf::Vector2f brPos = m_text.findCharacterPos(end_index) + (sf::Vector2f) { (float) m_font->getGlyph(m_textContents[end_index], m_text.getCharacterSize(), false, m_text.getOutlineThickness()).advance, (float) m_text.getCharacterSize()};
+
+    // sf::CircleShape cell1(2.5f);
+    // cell1.setOrigin(cell1.getLocalBounds().getCenter());
+    // cell1.setFillColor(sf::Color::Red);
+    // cell1.setPosition(tlPos);
+
+    // sf::CircleShape cell2(2.5f);
+    // cell2.setOrigin(cell2.getLocalBounds().getCenter());
+    // cell2.setFillColor(sf::Color::Red);
+    // cell2.setPosition(brPos);
+
+    // debugCells.push_back(cell1);
+    // debugCells.push_back(cell2);
 
     highlightRect.setSize(brPos - tlPos);
     highlightRect.setPosition(tlPos);
 }
+
+#pragma endregion
