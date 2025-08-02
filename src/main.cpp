@@ -100,8 +100,8 @@ int main()
     frame.setOutline(Outline(10.f, sf::Color::Blue, {500.f, 300.f}));
     frame.setAlignment(Layout::Alignment::CENTER);
 
-    Textbox* tbox = new Textbox("", &font, {300.f, 25.f}, sf::Color::White, 0.04,Textbox::TextAlignment::CENTER, sf::Color::Black, sf::Color::Red, 0.05f);
-    tbox->enableMutability(10, sf::Color::Green);
+    Textbox* tbox = new Textbox("", &font, {100.f, 100.f}, sf::Color::White, 0.04,Textbox::TextAlignment::CENTER, sf::Color::Black, sf::Color::Red, 0.05f);
+    tbox->enableMutability(1000, sf::Color::Green);
     tbox->setAlignment(Layout::Alignment::CENTER);
     tbox->setOutline(Outline(5.f, sf::Color::Red, tbox->getSize()));
     tbox->setPlaceholderText("Type here");
@@ -243,14 +243,51 @@ int main()
 
             if(const auto* textEntered = event->getIf<sf::Event::TextEntered>())
             {
-
                 if (currTextbox)
                 {
-                    currTextbox->handleKey(textEntered->unicode);
+                    currTextbox->handleKey(textEntered->unicode, sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift));
                 }
             }
 
         }
+
+
+        // if (currTextbox) {
+        //     sf::Vector2f pos = currTextbox->getPosition();
+        //     sf::Vector2f size = currTextbox->getSize();
+
+        //     // 🧪 Random highlight
+        //     sf::Vector2f start = {
+        //         pos.x + static_cast<float>(rand() % static_cast<int>(size.x)),
+        //         pos.y + static_cast<float>(rand() % static_cast<int>(size.y))
+        //     };
+
+        //     sf::Vector2f end = {
+        //         pos.x + static_cast<float>(rand() % static_cast<int>(size.x)),
+        //         pos.y + static_cast<float>(rand() % static_cast<int>(size.y))
+        //     };
+
+        //     currTextbox->highlight(start, end);
+
+        //     // 🧪 Random key input: a-z, space, or backspace
+        //     int keyType = rand() % 10;
+        //     char32_t c;
+        //     if (keyType < 7) {
+        //         c = U'a' + (rand() % 26); // Normal letters
+        //     } else if (keyType == 7) {
+        //         c = 32; // Space
+        //     } else {
+        //         c = 8; // Backspace
+        //     }
+
+        //     currTextbox->handleKey(c);
+
+        //     // 🧪 Random caret movement
+        //     int xShift = (rand() % 3) - 1; // -1, 0, or 1
+        //     int yShift = (rand() % 3) - 1; // up/down support
+
+        //     currTextbox->shiftFocus(xShift, yShift);
+        // }
 
         window.clear();
 

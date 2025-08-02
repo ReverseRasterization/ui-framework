@@ -29,13 +29,23 @@ sf::FloatRect Textbox::Line::getBounds(const sf::Text& m_text)
 {
     sf::FloatRect retRect;
 
+    if (startIndex > m_text.getString().getSize()-1 || endIndex > m_text.getString().getSize()-1)
+    {
+        std::cerr << "[ERROR] - ABORTING Line::getBounds DUE TO OUT OF BOUND INDICIES\n";
+        std::cerr << "      m_text Size: " << m_text.getString().getSize() << '\n';
+        std::cerr << "       m_text Contents: " << m_text.getString().toAnsiString() << "|\n";
+        std::cerr << "      _startIndex: " << startIndex << '\n';
+        std::cerr << "      _endIndex: " << endIndex << "\n\n";
+        return sf::FloatRect({-1.f, -1.f}, {-1.f, -1.f});
+    }
+    
     sf::Vector2f startCharPos = m_text.findCharacterPos(startIndex);
     sf::Vector2f endCharPos = m_text.findCharacterPos(endIndex);
 
     retRect.position = startCharPos;
     retRect.size = (endCharPos - startCharPos) + (sf::Vector2f) {m_text.getFont().getGlyph(m_text.getString()[endIndex], m_text.getCharacterSize(), false, m_text.getOutlineThickness()).advance, (float) m_text.getCharacterSize()};
 
-    return retRect; // todo: test this mf
+    return retRect;
 }
 
 #pragma endregion
@@ -96,19 +106,20 @@ void Textbox::updateLines()
     int start_i = 0;
     int i = 0;
 
-    for (char c : m_textContents)
+    for (int i = 0; i < m_textContents.size(); i++)
     {
+        char c = m_textContents[i];
+
         if (c == '\n')
         {
             m_lines.push_back(Line(start_i, i));
 
-            start_i = i + 1;
+            start_i = i + 1; // the next i    
         }
-
-        i++;
     }
 
     m_lines.push_back(Line(start_i, m_textContents.size()-1));
+    
 }
 
 void Textbox::positionText()
@@ -247,12 +258,14 @@ void Textbox::setTail()
 
 float Textbox::getCharIndexFromPosition(sf::Vector2f position)
 {
+    
     if (m_textContents.empty())
-        return 0;
+        return 0.f;
 
     debugCells = {};
 
     // Get which line corresponds with the y axis
+    
     Line targetLine(0,m_textContents.size()-1);
 
     if (m_lines.size() > 0) // multi line
@@ -261,7 +274,14 @@ float Textbox::getCharIndexFromPosition(sf::Vector2f position)
 
         for (Line line : m_lines)
         {
+            
             sf::FloatRect bounds = line.getBounds(m_text);
+
+            if (bounds.size.x == -1)
+            {
+                std::cerr << "[ERROR] - ABORTING getCharIndexFromPosition, BOUNDS FOR LINE RETURNED FAILED\n";
+                return -1.f;
+            }
 
             float topy = bounds.position.y;
             float bottomy = bounds.position.y + bounds.size.y;
@@ -285,8 +305,16 @@ float Textbox::getCharIndexFromPosition(sf::Vector2f position)
             }
         }
     }
+    
+
+    
      
     sf::FloatRect b = targetLine.getBounds(m_text);
+    if (b.size.x == -1)
+    {
+        std::cerr << "[ERROR] - ABORTING getCharIndexFromPosition, BOUNDS FOR LINE RETURNED FAILED\n";
+        return -1.f;
+    }
 
     // time to get to business baby
 
@@ -334,6 +362,8 @@ float Textbox::getCharIndexFromPosition(sf::Vector2f position)
         }
     }
 
+    
+
     return half ? best_i + 0.5f : best_i;
 }
 
@@ -348,6 +378,130 @@ bool Textbox::containsRestriction(Restriction restriction)
     }
 
     return false;
+}
+
+void Textbox::appendHistory(Textbox::HistoryElement n_element)
+{
+    if (history.size() > 100)
+    {
+        history.clear();
+    }
+
+    undoHistory.clear();
+    history.push_back(n_element);
+}
+
+void Textbox::undo()
+{
+    if (history.empty())
+        return;
+
+    HistoryElement elm = history[history.size()-1];
+
+    history.pop_back();
+
+    if (elm.type == CHAR_INSERTION) 
+    {
+        m_textContents.erase(elm.index);
+
+        undoHistory.push_back(HistoryElement(SINGLE_DELETION, elm.index, elm.character));
+
+        focusPosition = elm.index;
+    }else if (elm.type == MASS_INSERTION)
+    {
+        m_textContents.erase(elm.index, elm.index + elm.string.size());
+        
+        undoHistory.push_back(HistoryElement(MASS_DELETION, elm.index, elm.string));
+
+        focusPosition = elm.index;
+    }else if (elm.type == SINGLE_DELETION)
+    {
+        m_textContents.insert(elm.index, 1, elm.character);
+
+        undoHistory.push_back(HistoryElement(CHAR_INSERTION, elm.index, elm.character));
+        focusPosition = elm.index + 1;
+    }else if (elm.type == MASS_DELETION)
+    {
+        m_textContents.insert(elm.index, elm.string);
+
+        undoHistory.push_back(HistoryElement(MASS_INSERTION, elm.index, elm.string));
+
+        focusPosition = elm.index + elm.string.size();
+    }
+    
+
+    setString(m_textContents);
+}
+
+void Textbox::redo()
+{
+    if (undoHistory.empty())
+        return;
+
+    HistoryElement elm = undoHistory[undoHistory.size()-1];
+
+    undoHistory.pop_back();
+
+    if (elm.type == CHAR_INSERTION)
+    {
+        m_textContents.erase(elm.index);
+        history.push_back(HistoryElement(SINGLE_DELETION, elm.index, elm.character));
+
+        focusPosition = elm.index + 1;
+    }else if (elm.type == MASS_INSERTION)
+    {
+        m_textContents.erase(elm.index, elm.index + elm.string.size());
+        history.push_back(HistoryElement(MASS_DELETION, elm.index, elm.string));
+
+        focusPosition = elm.index;
+    }else if (elm.type == SINGLE_DELETION)
+    {
+        m_textContents.insert(elm.index, 1, elm.character);
+        history.push_back(HistoryElement(CHAR_INSERTION, elm.index, elm.character));
+
+        focusPosition = elm.index + 1;
+    }else if (elm.type == MASS_DELETION)
+    {
+        focusPosition = elm.index;
+        appendString(elm.string); // handles pushing back the history
+    }
+
+    setString(m_textContents);
+}   
+
+bool Textbox::isRestricted(char character)
+{
+    bool isSpace = character == U' ';
+    bool isNumber = character >= U'0' && character <= U'9';
+    bool isUpper = character >= U'A' && character <= U'Z';
+    bool isLower = character >= U'a' && character <= U'z';
+    bool isLetter = isUpper || isLower;
+    bool isSpecial = !isSpace && !isNumber && !isLetter;
+
+    bool insert = false;
+
+    if (isSpace)
+    {
+        insert = !containsRestriction(NO_SPACE);
+    }
+    else if (isNumber)
+    {
+        insert = !containsRestriction(NO_NUMBERS);
+    }
+    else if (isUpper)
+    {
+        insert = !containsRestriction(NO_LETTERS) && !containsRestriction(NO_UPPER_CASE);
+    }
+    else if (isLower)
+    {
+        insert = !containsRestriction(NO_LETTERS) && !containsRestriction(NO_LOWER_CASE);
+    }
+    else if (isSpecial)
+    {
+        insert = !containsRestriction(NO_SPECIAL_CHARACTERS);
+    }
+
+    return !insert;
 }
 
 #pragma endregion
@@ -392,8 +546,6 @@ Textbox::Textbox
     if (!text.empty())
     {
         setString(text);
-
-        updateLines();
     }else {
         togglePlaceholder(true);
     }
@@ -460,7 +612,8 @@ void Textbox::setString(std::string new_string)
     {
         togglePlaceholder(true);
     }
-    
+
+    updateLines();
     displayText(); // this'll set the tail
 }
 
@@ -511,13 +664,14 @@ void Textbox::clickOff()
     setString(m_textContents);
 }
 
-void Textbox::handleKey(char32_t character)
+void Textbox::handleKey(char32_t character, bool redo)
 {
     /*
         CTRL + A = 1
         CTRL + C = 3
         CTRL + V = 22
         CTRL + X = 24
+        CTRL + Z = 26
 
         Backspace = 8
         DEL = 127
@@ -534,6 +688,7 @@ void Textbox::handleKey(char32_t character)
     constexpr char32_t COPY = 3;
     constexpr char32_t PASTE = 22;
     constexpr char32_t CUT = 24;
+    constexpr char32_t UNDO = 26;
 
     if (character == SELECT_ALL)
     {
@@ -551,12 +706,16 @@ void Textbox::handleKey(char32_t character)
     {
         if (highlighted)
         {
+            appendHistory(HistoryElement(MASS_DELETION, highlight_start, m_textContents.substr(highlight_start, highlight_start-highlight_end)));
+
             m_textContents.erase(highlight_start, highlight_end-highlight_start + 1);
             focusPosition = highlight_start;
 
             highlighted = false;
         }else if (focusPosition > 0)
         {
+            appendHistory(HistoryElement(SINGLE_DELETION, focusPosition-1, m_textContents[focusPosition-1]));
+
             m_textContents.erase(focusPosition-1, 1);
             focusPosition--;
         }
@@ -601,7 +760,7 @@ void Textbox::handleKey(char32_t character)
         bool success = clip::get_text(nString);
 
         if (success)
-            appendString(nString);
+            appendString(nString); // handles history
     }
 
     if (character == CUT)
@@ -613,6 +772,7 @@ void Textbox::handleKey(char32_t character)
 
         if (success)
         {
+            appendHistory(HistoryElement(HistoryType::MASS_DELETION, highlight_start, m_textContents.substr(highlight_start, highlight_end-highlight_start))); // todo: test this
             m_textContents.erase(highlight_start, highlight_end-highlight_start + 1);
             focusPosition = highlight_start;
 
@@ -625,71 +785,74 @@ void Textbox::handleKey(char32_t character)
         
     }
 
+    if (character == UNDO)
+    {
+        redo ? this->redo() : this->undo();
+        return;
+    }
+
     // Filter out unhandled control characters
     if ((character < 32 && character != BACKSPACE && character != DELETE && character != SELECT_ALL) || character == ENTER)
         return;
 
-
-    bool isSpace = character == SPACE;
-    bool isNumber = character >= U'0' && character <= U'9';
-    bool isUpper = character >= U'A' && character <= U'Z';
-    bool isLower = character >= U'a' && character <= U'z';
-    bool isLetter = isUpper || isLower;
-    bool isSpecial = !isSpace && !isNumber && !isLetter;
-
-    bool insert = false;
-
-    if (isSpace)
-    {
-        insert = !containsRestriction(NO_SPACE);
-    }
-    else if (isNumber)
-    {
-        insert = !containsRestriction(NO_NUMBERS);
-    }
-    else if (isUpper)
-    {
-        insert = !containsRestriction(NO_LETTERS) && !containsRestriction(NO_UPPER_CASE);
-    }
-    else if (isLower)
-    {
-        insert = !containsRestriction(NO_LETTERS) && !containsRestriction(NO_LOWER_CASE);
-    }
-    else if (isSpecial)
-    {
-        insert = !containsRestriction(NO_SPECIAL_CHARACTERS);
-    }
+    if (isRestricted(character))
+        return;
 
     if (m_textContents.size() >= maxCharacters && !highlighted)
         return;
 
-    if (insert)
+    if (highlighted)
     {
+        appendHistory(HistoryElement(MASS_DELETION, highlight_start, m_textContents.substr(highlight_start, highlight_end-highlight_start))); // for content that was deleted
+        appendHistory(HistoryElement(CHAR_INSERTION, highlight_start, character)); // for the character that'll be added
 
-        if (highlighted)
-        {
-            m_textContents.erase(highlight_start, highlight_end-highlight_start + 1);
-            focusPosition = highlight_start;
+        m_textContents.erase(highlight_start, highlight_end-highlight_start + 1);
+        m_textContents.insert(highlight_start, 1, character);
 
-            highlighted = false;
-        }
+        focusPosition = highlight_start;
+        highlighted = false;
+    }else {
+        appendHistory(HistoryElement(CHAR_INSERTION, focusPosition, character));
 
         m_textContents.insert(focusPosition, 1, character);
         focusPosition++;
-    } 
+    }
 
+    std::cout << "History Size: " << history.size() << '\n';
+    std::cout << "Undo History Size: " << undoHistory.size() << '\n';
     setString(m_textContents);
-    updateLines();
 }
 
 void Textbox::appendString(std::string string)
 {
     togglePlaceholder(false);
 
+    // Filter out characters on restrictions
+
+    std::string str;
+
     for (char c : string)
     {
-        handleKey(c);
+        if (!isRestricted(c))
+        {
+            str.append(1, c);
+        }
     }
+
+    // Slice string if necessary to meet max character requirement
+
+    if (m_textContents.size() + str.size() > maxCharacters)
+    {
+        unsigned int availableSpace = maxCharacters - m_textContents.size();
+
+        str = str.substr(0, availableSpace);
+    }
+
+    appendHistory(HistoryElement(MASS_INSERTION, focusPosition, str));
+    m_textContents.insert(focusPosition, str);
+    focusPosition += str.size();
+
+    setString(m_textContents);
 }
 
 void Textbox::setPlaceholderText(std::string placeholder_text)
@@ -758,11 +921,12 @@ bool isHalf(float num)
 }
 
 void Textbox::highlight(sf::Vector2f start_position, sf::Vector2f end_position)
-{
+{ 
     float rawStartIndex = getCharIndexFromPosition(start_position); // returns x.5 if the mouse is atleast halfway through the character
     float rawEndIndex = getCharIndexFromPosition(end_position);
 
-    if (rawStartIndex == -1 || rawEndIndex == -1)
+
+    if (rawStartIndex == -1.f || rawEndIndex == -1.f)
     {
         std::cerr << "[ERROR] - highlight (position override) FAILED, RAW START INDEX OR RAW END INDEX HAD -1\n";
         return;
@@ -820,6 +984,14 @@ void Textbox::highlight(unsigned int start_index, unsigned int end_index)
         {
             unsigned int _startIndex = std::max(start_index, line->getStartIndex());
             unsigned int _endIndex = std::min(end_index, line->getEndIndex());
+
+            if (_startIndex > m_textContents.size()-1 || _endIndex > m_textContents.size()-1)
+            {
+                std::cerr << "[ERROR] - ABORTING highlight (index variant) DUE TO OUT OF BOUND INDICIES\n";
+                std::cerr << "      m_textContents Size: " << m_textContents.size() << '\n';
+                std::cerr << "      _startIndex: " << _startIndex << '\n';
+                std::cerr << "      _endIndex: " << _endIndex << "\n\n";
+            }
 
             sf::Vector2f tlPos = m_text.findCharacterPos(_startIndex);
             sf::Vector2f brPos = m_text.findCharacterPos(_endIndex) + (sf::Vector2f) { (float) m_font->getGlyph(m_textContents[_endIndex], m_text.getCharacterSize(), false, m_text.getOutlineThickness()).advance, (float) m_text.getCharacterSize()};

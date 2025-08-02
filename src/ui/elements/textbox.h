@@ -70,6 +70,7 @@ class Textbox: public Element
         sf::Vector2f getSize() {return m_background.getSize();}
 
         void setPosition(sf::Vector2f new_position);
+        sf::Vector2f getPosition() {return m_background.getPosition();}
         sf::FloatRect getGlobalBounds() {return m_background.getGlobalBounds();}
 
         void setBackgroundColor(sf::Color color) {m_background.setFillColor(color); m_backgroundColor = color;}
@@ -95,7 +96,7 @@ class Textbox: public Element
 
         void handleClick(sf::Vector2f mousePos);
         void clickOff();
-        void handleKey(char32_t character);
+        void handleKey(char32_t character, bool redo = false);
 
         void highlight(sf::Vector2f start_position, sf::Vector2f end_position);
         void highlight(unsigned int start_index, unsigned int end_index);
@@ -147,6 +148,7 @@ class Textbox: public Element
         unsigned int highlight_end = 0;
 
         std::vector<Restriction> m_restrictions;
+        bool isRestricted(char character);
 
         float m_paddingRatio;
         TextAlignment m_textAlignment;
@@ -162,7 +164,62 @@ class Textbox: public Element
         
         bool containsRestriction(Restriction restriction);
 
-        std::vector<std::pair<std::string, int>> history; // the character (or string in the event of a paste) and then the index in which the content was stored
+        enum HistoryType
+        {
+            CHAR_INSERTION,
+            MASS_INSERTION,
+
+            SINGLE_DELETION,
+            MASS_DELETION,
+
+            NONE
+        };
+
+        /*
+            CHAR_INSERTION:
+                Index will be specified on where the character was inserted
+                Character will be specified
+
+            PASTE_INSERTION:
+                Index will represent the start of where the string was inserted
+                String will be specified
+
+            SINGLE_DELETION:
+                Index will represent where the character was deleted
+                Character will represent what character was deleted
+
+            MASS_DELETION:
+                Index will represent the start of the portion of the string that was deleted
+                String will represent the string that was deleted
+        */
+        struct HistoryElement
+        {
+            HistoryType type;
+
+            unsigned int index;
+
+            char character;
+            std::string string;
+
+            HistoryElement(HistoryType n_type, unsigned int n_index, char n_char):
+                type(n_type),
+                index(n_index),
+                character(n_char)
+            {}
+
+            HistoryElement(HistoryType n_type, unsigned int n_index, std::string n_string):
+                type(n_type),
+                index(n_index),
+                string(n_string)
+            {}
+        };
+
+        void appendHistory(HistoryElement n_element);
+        std::vector<HistoryElement> history;
+        std::vector<HistoryElement> undoHistory;
+
+        void undo();
+        void redo();
 
         // temp
         std::vector<sf::CircleShape> debugCells;
