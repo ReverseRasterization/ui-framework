@@ -5,6 +5,7 @@ set(SFML_STATIC_LIBRARIES TRUE)
 set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
+set(CLIP_ENABLE_IMAGE FALSE)
 
 include(FetchContent)
 FetchContent_Declare(SFML
@@ -15,6 +16,13 @@ FetchContent_Declare(SFML
     SYSTEM)
 
 FetchContent_MakeAvailable(SFML)
+
+FetchContent_Declare(CLIP
+    GIT_REPOSITORY https://github.com/dacap/clip.git
+    GIT_TAG v1.10
+
+)
+FetchContent_MakeAvailable(clip)
 
 add_executable(main 
                     src/main.cpp 
@@ -37,6 +45,7 @@ add_custom_command(TARGET main POST_BUILD
     ${CMAKE_SOURCE_DIR}/assets ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/assets
 )
 
-
 target_compile_features(main PRIVATE cxx_std_17)
 target_link_libraries(main PRIVATE SFML::Graphics)
+target_link_libraries(main PRIVATE clip)
+target_include_directories(main PRIVATE ${clip_SOURCE_DIR})

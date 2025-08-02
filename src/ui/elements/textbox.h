@@ -28,10 +28,10 @@ class Textbox: public Element
             unsigned int startIndex;
             unsigned int endIndex;
 
-            unsigned int getStartIndex(){return startIndex;}
+            unsigned int getStartIndex() const {return startIndex;}
             void setStartIndex(unsigned int i) {startIndex = i;}
 
-            unsigned int getEndIndex(){return endIndex;}
+            unsigned int getEndIndex() const {return endIndex;}
             void setEndIndex(unsigned int i) {endIndex = i;}
 
             Line(unsigned int start_index, unsigned int end_index)
@@ -48,10 +48,16 @@ class Textbox: public Element
             window.draw(m_background);
 
             if (highlighted)
-                window.draw(highlightRect);
-
-            if (selected)
+            { 
+                for (sf::RectangleShape rect : highlightRects)
+                {
+                    window.draw(rect);
+                }
+            }
+                
+            if (selected && !highlighted)
                 window.draw(tailRect);
+
                 for (sf::CircleShape cell : debugCells)
                 {
                     window.draw(cell);
@@ -76,11 +82,12 @@ class Textbox: public Element
 
         // setAlignment and getAlignment are here from the Elements class
 
-        void enableMutability(int max_characters = 1000, sf::Color highlight_color = sf::Color::Blue);
+        void enableMutability(int max_characters = 1000, sf::Color highlight_color = sf::Color::Cyan);
         void disableMutability();
         bool getMutable(){return isMutable;}
 
         void setString(std::string new_string);
+        void appendString(std::string string);
         std::string getString(){return m_textContents;}
 
         void addRestriction(Restriction restriction) {m_restrictions.push_back(restriction);}
@@ -93,7 +100,7 @@ class Textbox: public Element
         void highlight(sf::Vector2f start_position, sf::Vector2f end_position);
         void highlight(unsigned int start_index, unsigned int end_index);
 
-        void shiftFocus(int direction); // 1 is forward, -1 is backwards
+        void shiftFocus(int horizontal_direction, int vertical_direction = 0); // 1 is forward / upward, -1 is backwards/downward, 0 is neither
         
         Textbox(
             std::string text, 
@@ -114,11 +121,12 @@ class Textbox: public Element
         float m_outlineRatio = 0.f;
 
         sf::RectangleShape m_background;
-        sf::RectangleShape highlightRect;
+        std::vector<sf::RectangleShape> highlightRects;
         sf::RectangleShape tailRect; // the width is 2% of the background width
 
         sf::Color m_backgroundColor;
         sf::Color m_textColor;
+        sf::Color m_highlightColor = sf::Color::Cyan;
         sf::Text m_text;
         sf::Font* m_font;
 
@@ -126,6 +134,7 @@ class Textbox: public Element
         std::string m_placeholderText;
 
         std::vector<Line> m_lines;
+        void updateLines();
         std::vector<Line*> getLinesByIndexRange(unsigned int i_begin, unsigned int i_end); // returns nullptr by default
 
         int focusPosition = 0; // basically where the text is inserted upon a keystroke
@@ -137,7 +146,7 @@ class Textbox: public Element
         unsigned int highlight_start = 0;
         unsigned int highlight_end = 0;
 
-        std::vector<Restriction> m_restrictions; // priority is first to back
+        std::vector<Restriction> m_restrictions;
 
         float m_paddingRatio;
         TextAlignment m_textAlignment;
@@ -149,8 +158,11 @@ class Textbox: public Element
         void setTail();
 
         float getCharIndexFromPosition(sf::Vector2f position); // if the outcome is .5 then that means place the cursor after, otherwise, before
+                                                               // returns -1.f in failure
         
         bool containsRestriction(Restriction restriction);
+
+        std::vector<std::pair<std::string, int>> history; // the character (or string in the event of a paste) and then the index in which the content was stored
 
         // temp
         std::vector<sf::CircleShape> debugCells;

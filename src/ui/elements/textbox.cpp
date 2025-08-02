@@ -1,4 +1,5 @@
 #include "textbox.h"
+#include "clip.h"
 #include <algorithm>
 #include <iostream>
 #include <cmath>
@@ -43,10 +44,10 @@ sf::FloatRect Textbox::Line::getBounds(const sf::Text& m_text)
 
 std::vector<Textbox::Line*> Textbox::getLinesByIndexRange(unsigned int i_begin, unsigned int i_end)
 {
-    if (i_begin > m_lines.size()-1)
+    if (i_begin > m_textContents.size()-1)
         return {nullptr};
 
-    std::vector<Textbox::Line*> retVec {nullptr};
+    std::vector<Textbox::Line*> retVec;
 
     if (i_begin > i_end)
     {
@@ -88,26 +89,69 @@ std::vector<Textbox::Line*> Textbox::getLinesByIndexRange(unsigned int i_begin, 
     return retVec;
 }
 
+void Textbox::updateLines()
+{
+    m_lines.clear();
+
+    int start_i = 0;
+    int i = 0;
+
+    for (char c : m_textContents)
+    {
+        if (c == '\n')
+        {
+            m_lines.push_back(Line(start_i, i));
+
+            start_i = i + 1;
+        }
+
+        i++;
+    }
+
+    m_lines.push_back(Line(start_i, m_textContents.size()-1));
+}
+
 void Textbox::positionText()
 {
+    sf::FloatRect bounds = m_text.getLocalBounds();
+
+    const sf::Vector2f bgPos = m_background.getPosition();
+    const sf::Vector2f bgSize = m_background.getSize();
+    const float horizPadding = bgSize.x * m_paddingRatio;
+
+    // debugCells.clear();
+
+    // sf::CircleShape cell (5.f);
+    // cell.setOrigin(cell.getLocalBounds().getCenter());
+    
+    // cell.setPosition(globalBounds.position);
+    // cell.setFillColor(sf::Color::Blue);
+    // debugCells.push_back(cell);
+
+    // cell.setPosition(globalBounds.position + globalBounds.size);
+    // cell.setFillColor(sf::Color::Green);
+    // debugCells.push_back(cell);
+
     if (m_textAlignment == TextAlignment::LEFT)
     {
-
+        m_text.setOrigin(bounds.position + (sf::Vector2f) {0.f, bounds.size.y/2.f});
+        m_text.setPosition(bgPos + (sf::Vector2f) {horizPadding, bgSize.y/2});
     }else if (m_textAlignment == TextAlignment::CENTER)
     {
-        sf::FloatRect newBounds = m_text.getLocalBounds();
-        m_text.setOrigin({newBounds.position.x + newBounds.size.x / 2.f, newBounds.position.y + newBounds.size.y / 2.f});
-        m_text.setPosition(m_background.getPosition() + (m_background.getSize() / 2.f));
+        m_text.setOrigin(bounds.getCenter());
+        m_text.setPosition(bgPos + (bgSize / 2.f));
     }else if (m_textAlignment == TextAlignment::RIGHT) {
-
+        m_text.setOrigin({bounds.position.x + bounds.size.x, bounds.getCenter().y});
+        m_text.setPosition({bgPos.x + bgSize.x - horizPadding, bgPos.y + bgSize.y/2});
     }
 }
 
 void Textbox::displayText()
 {    
     const sf::Vector2f backgroundSize = m_background.getSize();
-    const float padding = backgroundSize.x * m_paddingRatio;
-    float maxFontSize = backgroundSize.y - (padding * 2);
+    const float xPadding = backgroundSize.x * m_paddingRatio;
+    const float yPadding = backgroundSize.y * m_paddingRatio;
+    float maxFontSize = backgroundSize.y - (yPadding * 2);
 
     m_text.setCharacterSize(maxFontSize);
 
@@ -132,7 +176,7 @@ void Textbox::displayText()
 
     // Resizing the text
 
-    const float availableWidth = backgroundSize.x - (padding * 2);
+    const float availableWidth = backgroundSize.x - (xPadding * 2);
     unsigned int low = 1;
     unsigned int high = maxFontSize;
     unsigned int bestFit = low;
@@ -206,7 +250,6 @@ float Textbox::getCharIndexFromPosition(sf::Vector2f position)
     if (m_textContents.empty())
         return 0;
 
-    
     debugCells = {};
 
     // Get which line corresponds with the y axis
@@ -253,6 +296,15 @@ float Textbox::getCharIndexFromPosition(sf::Vector2f position)
     float best_i = 0;
     float minDistance = std::numeric_limits<float>::max();
     bool half = false;
+    
+    if (targetLine.getStartIndex() > m_textContents.size()-1 || targetLine.getEndIndex() > m_textContents.size()-1)
+    {
+        std::cerr << "[ERROR] - TARGET LINE CALCULATED IN getCharIndexFromPosition OUT OF BOUNDS." << '\n';
+        std::cerr << "      m_textContents size: " << m_textContents.size() << '\n';
+        std::cerr << "      Line start index: " << targetLine.getStartIndex() << '\n';
+        std::cerr << "      Line end index: " << targetLine.getEndIndex() << "\n\n";
+        return -1.f;
+    }
 
     for (int i = targetLine.getStartIndex(); i <= targetLine.getEndIndex(); i++)
     {
@@ -341,28 +393,10 @@ Textbox::Textbox
     {
         setString(text);
 
-        int start_i = 0;
-        int i = 0;
-
-        for (char c : text)
-        {
-            if (c == '\n')
-            {
-                m_lines.push_back(Line(start_i, i));
-
-                start_i = i + 1;
-            }
-
-            i++;
-        }
-
-        m_lines.push_back(Line(start_i, text.size()-1));
+        updateLines();
     }else {
         togglePlaceholder(true);
     }
-
-    std::cout << "Total lines: " << m_lines.size() << '\n';
-
 }           
 
 void Textbox::setOutline(Outline outline)
@@ -401,7 +435,7 @@ void Textbox::enableMutability(int max_characters, sf::Color highlight_color)
     isMutable = true;
     maxCharacters = max_characters;
 
-    highlightRect.setFillColor(highlight_color);
+    m_highlightColor = highlight_color;
 }
 
 void Textbox::disableMutability()
@@ -434,6 +468,17 @@ void Textbox::handleClick(sf::Vector2f mousePos)
 {
     if (!isMutable){return;}
 
+    float targetIndex = getCharIndexFromPosition(mousePos);
+    if (targetIndex == -1.f)
+    {
+        std::cerr << "[ERROR] - handleClick FAILED, getCharIndexFromPosition RETURNED -1" << '\n';
+        return;
+    }
+
+    focusPosition = std::ceil(targetIndex);
+
+    
+
     if (highlighted)
         highlighted = false;
 
@@ -445,7 +490,9 @@ void Textbox::handleClick(sf::Vector2f mousePos)
         m_background.setFillColor(tuneColor(m_backgroundColor, .8f));
     }
 
-    focusPosition = std::ceil(getCharIndexFromPosition(mousePos));
+
+
+    
     
     displayText(); // this'll set the tail
     
@@ -470,6 +517,7 @@ void Textbox::handleKey(char32_t character)
         CTRL + A = 1
         CTRL + C = 3
         CTRL + V = 22
+        CTRL + X = 24
 
         Backspace = 8
         DEL = 127
@@ -478,16 +526,14 @@ void Textbox::handleKey(char32_t character)
         Letters = 65-90 (uppercase), 97-122 (lowercase)
     */
 
-    std::cout << (int) character << "\n";
-
     constexpr char32_t BACKSPACE = 8;
     constexpr char32_t DELETE = 127;
     constexpr char32_t SPACE = 20;
     constexpr char32_t ENTER = 13;
     constexpr char32_t SELECT_ALL = 1;
-
-    if (character >= 128 || character == ENTER)
-        return;
+    constexpr char32_t COPY = 3;
+    constexpr char32_t PASTE = 22;
+    constexpr char32_t CUT = 24;
 
     if (character == SELECT_ALL)
     {
@@ -531,9 +577,58 @@ void Textbox::handleKey(char32_t character)
         }
         if (focusPosition < m_textContents.size())
         {
-            m_textContents.erase(focusPosition + 1, 1);
+            m_textContents.erase(focusPosition, 1);
         }
+
+        setString(m_textContents);
+
+        return;
     }
+
+    if (character == COPY)
+    {
+        if (!highlighted)
+            return;
+        
+        clip::set_text(m_textContents.substr(highlight_start, highlight_start-highlight_end));
+
+        return;
+    }
+
+    if (character == PASTE)
+    {
+        std::string nString;
+        bool success = clip::get_text(nString);
+
+        if (success)
+            appendString(nString);
+    }
+
+    if (character == CUT)
+    {
+        if (!highlighted)
+            return;
+
+        bool success = clip::set_text(m_textContents.substr(highlight_start, highlight_start-highlight_end));
+
+        if (success)
+        {
+            m_textContents.erase(highlight_start, highlight_end-highlight_start + 1);
+            focusPosition = highlight_start;
+
+            highlighted = false;
+        }
+
+        setString(m_textContents);
+
+        return;
+        
+    }
+
+    // Filter out unhandled control characters
+    if ((character < 32 && character != BACKSPACE && character != DELETE && character != SELECT_ALL) || character == ENTER)
+        return;
+
 
     bool isSpace = character == SPACE;
     bool isNumber = character >= U'0' && character <= U'9';
@@ -584,6 +679,17 @@ void Textbox::handleKey(char32_t character)
     } 
 
     setString(m_textContents);
+    updateLines();
+}
+
+void Textbox::appendString(std::string string)
+{
+    togglePlaceholder(false);
+
+    for (char c : string)
+    {
+        handleKey(c);
+    }
 }
 
 void Textbox::setPlaceholderText(std::string placeholder_text)
@@ -594,15 +700,48 @@ void Textbox::setPlaceholderText(std::string placeholder_text)
         togglePlaceholder(true);
 }
 
-void Textbox::shiftFocus(int direction)
+void Textbox::shiftFocus(int horizontal_direction, int vertical_direction)
 {
-    if (direction == 1)
+    highlighted = false;
+
+    if (m_lines.size() > 1 && vertical_direction != 0)
+    {
+        // Get the index of the current line
+
+        unsigned int currLineIndex = 0;
+
+        for (int i = 0; i < m_lines.size(); i++)
+        {
+            const Line& line = m_lines[i];
+
+            if (line.getStartIndex() <= focusPosition && line.getEndIndex() + 1 >= focusPosition)
+            {
+                currLineIndex = i;
+                break;
+            }
+        }
+
+        // Move it baby 
+        int newIndex = currLineIndex - vertical_direction;
+        
+        if (newIndex >= 0 && newIndex < m_lines.size())
+        {
+            const Line& currLine = m_lines[currLineIndex];
+            const Line& newLine = m_lines[newIndex];
+
+            unsigned int offset = focusPosition - currLine.getStartIndex();
+
+            focusPosition = std::clamp(newLine.getStartIndex() + offset, newLine.getStartIndex(), newLine.getEndIndex());
+        }
+    }
+
+    if (horizontal_direction == 1)
     {
         if (focusPosition < m_textContents.size())
         {
             focusPosition++;
         }
-    }else if (direction == -1)
+    }else if (horizontal_direction == -1)
     {
         if (focusPosition > 0)
         {
@@ -622,6 +761,12 @@ void Textbox::highlight(sf::Vector2f start_position, sf::Vector2f end_position)
 {
     float rawStartIndex = getCharIndexFromPosition(start_position); // returns x.5 if the mouse is atleast halfway through the character
     float rawEndIndex = getCharIndexFromPosition(end_position);
+
+    if (rawStartIndex == -1 || rawEndIndex == -1)
+    {
+        std::cerr << "[ERROR] - highlight (position override) FAILED, RAW START INDEX OR RAW END INDEX HAD -1\n";
+        return;
+    }
 
     // the mouse position has to be atleast half of the character in order for it to highlight
     // if the mouse starts off more than halfway through a character, that character isn't included
@@ -662,30 +807,37 @@ void Textbox::highlight(unsigned int start_index, unsigned int end_index)
     if (start_index >= m_textContents.size() || end_index >= m_textContents.size())
         return;
 
+    highlightRects.clear();
     highlighted = true;
     highlight_start = start_index;
     highlight_end = end_index;
 
-    // TODO: Line system
+    std::vector<Line*> targetLines = getLinesByIndexRange(start_index, end_index);
+    
+    if (targetLines.size() > 1)
+    {
+        for (Line* line : targetLines)
+        {
+            unsigned int _startIndex = std::max(start_index, line->getStartIndex());
+            unsigned int _endIndex = std::min(end_index, line->getEndIndex());
 
-    sf::Vector2f tlPos = m_text.findCharacterPos(start_index);
-    sf::Vector2f brPos = m_text.findCharacterPos(end_index) + (sf::Vector2f) { (float) m_font->getGlyph(m_textContents[end_index], m_text.getCharacterSize(), false, m_text.getOutlineThickness()).advance, (float) m_text.getCharacterSize()};
+            sf::Vector2f tlPos = m_text.findCharacterPos(_startIndex);
+            sf::Vector2f brPos = m_text.findCharacterPos(_endIndex) + (sf::Vector2f) { (float) m_font->getGlyph(m_textContents[_endIndex], m_text.getCharacterSize(), false, m_text.getOutlineThickness()).advance, (float) m_text.getCharacterSize()};
 
-    // sf::CircleShape cell1(2.5f);
-    // cell1.setOrigin(cell1.getLocalBounds().getCenter());
-    // cell1.setFillColor(sf::Color::Red);
-    // cell1.setPosition(tlPos);
+            sf::RectangleShape nRect(brPos-tlPos);
+            nRect.setPosition(tlPos);
+            nRect.setFillColor(m_highlightColor);
+            highlightRects.push_back(nRect);
+        }
+    }else {
+        sf::Vector2f tlPos = m_text.findCharacterPos(start_index);
+        sf::Vector2f brPos = m_text.findCharacterPos(end_index) + (sf::Vector2f) { (float) m_font->getGlyph(m_textContents[end_index], m_text.getCharacterSize(), false, m_text.getOutlineThickness()).advance, (float) m_text.getCharacterSize()};
 
-    // sf::CircleShape cell2(2.5f);
-    // cell2.setOrigin(cell2.getLocalBounds().getCenter());
-    // cell2.setFillColor(sf::Color::Red);
-    // cell2.setPosition(brPos);
-
-    // debugCells.push_back(cell1);
-    // debugCells.push_back(cell2);
-
-    highlightRect.setSize(brPos - tlPos);
-    highlightRect.setPosition(tlPos);
+        sf::RectangleShape nRect(brPos-tlPos);
+        nRect.setPosition(tlPos);
+        nRect.setFillColor(m_highlightColor);
+        highlightRects.push_back(nRect);
+    }
 }
 
 #pragma endregion

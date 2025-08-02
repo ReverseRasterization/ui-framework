@@ -2,31 +2,24 @@
 
     TODO:
 
-        TEXTBOXES:
+        TEXTBOXES: 
 
-            Fix bug where if you highlight and press any of the control keys or whatever it deletes the text
-            
-            Fix highlighting whenever there are new lines
-                Implement a line tracking system that tracks how many lines there are based on index
-                Make it so that the highlighting system makes rectangles for each line   
-
-            Implement the up and down arrows for the tail
-
-            Optimize the getCharIndexFromPosition function by reducing the number of characters it has to search through
-
-            Add text alignment customization
             Add undo & redo support
-            Add copy and paste support
             Add support for hidden characters
-            Add multiline support (mostly implemented just make it so that the user can make new lines in mutability)
 
-            Add scaling options
-                Text Wrapping
-                Text Wrapping w/ Expansion
+            Fix issues where characters that go under the baseline (ie. g, y, etc. throw off the positioning of the text)
+            Fix highlighting where it'll highlight above the characters (ts pmo bro)
+            Fix the tail being THICC whenever the textbox is wide
 
-                Scroll effect
+            Add multiline support (mostly implemented just make it so that the user can make new lines in mutability) and an option to disable it
+                Implement text wrapping
+                For CENTER alignment, make each line align with the center
+                For RIGHT alignment, make each line stick to the right
 
-                Resizing (which we already have just wanna list it out)
+            Add scaling options, all allow multi-line and single-line
+                Expansion (multi-line only)
+                Scroll effect                                 
+                Resizing (already have)
 
         BUTTONS:
 
@@ -107,11 +100,12 @@ int main()
     frame.setOutline(Outline(10.f, sf::Color::Blue, {500.f, 300.f}));
     frame.setAlignment(Layout::Alignment::CENTER);
 
-    Textbox* tbox = new Textbox("", &font, {100.f, 100.f}, sf::Color::White, 0.04,Textbox::TextAlignment::CENTER, sf::Color::Black, sf::Color::Red, 0.05f);
-    tbox->enableMutability(1000, sf::Color::Green);
+    Textbox* tbox = new Textbox("", &font, {300.f, 25.f}, sf::Color::White, 0.04,Textbox::TextAlignment::CENTER, sf::Color::Black, sf::Color::Red, 0.05f);
+    tbox->enableMutability(10, sf::Color::Green);
     tbox->setAlignment(Layout::Alignment::CENTER);
     tbox->setOutline(Outline(5.f, sf::Color::Red, tbox->getSize()));
     tbox->setPlaceholderText("Type here");
+    tbox->setRestrictions({Textbox::Restriction::NO_NUMBERS});
 
     // Button* btn = new Button({50.f, 50.f}, Layout::Alignment::CENTER, Button::Text("CLEAR", &font, 4, sf::Color::White, sf::Color::Black, 0.2f));
     // btn->setCellOccupancy(1);
@@ -238,6 +232,12 @@ int main()
                 }else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right))
                 {
                     currTextbox->shiftFocus(1);
+                }else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up))
+                {
+                    currTextbox->shiftFocus(0, 1);
+                }else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Down))
+                {
+                    currTextbox->shiftFocus(0, -1);
                 }
             }
 
