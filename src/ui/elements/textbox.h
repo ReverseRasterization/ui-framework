@@ -102,6 +102,9 @@ class Textbox: public Element
         void highlight(unsigned int start_index, unsigned int end_index);
 
         void shiftFocus(int horizontal_direction, int vertical_direction = 0); // 1 is forward / upward, -1 is backwards/downward, 0 is neither
+
+        // temp
+        unsigned int getFocusPosition(){return focusPosition;}
         
         Textbox(
             std::string text, 
@@ -112,7 +115,8 @@ class Textbox: public Element
             TextAlignment text_alignment = TextAlignment::CENTER,
             sf::Color fill_color = sf::Color::Black, 
             sf::Color outline_color = sf::Color::Black,
-            float outline_ratio = 0.f // relative to the character size
+            float outline_ratio = 0.f, // relative to the character size
+            bool mask_characters = false
         );
 
     private:
@@ -147,6 +151,8 @@ class Textbox: public Element
         unsigned int highlight_start = 0;
         unsigned int highlight_end = 0;
 
+        bool masking = false;
+
         std::vector<Restriction> m_restrictions;
         bool isRestricted(char character);
 
@@ -166,13 +172,13 @@ class Textbox: public Element
 
         enum HistoryType
         {
-            CHAR_INSERTION,
-            MASS_INSERTION,
+            CHAR_INSERTION = 0,
+            MASS_INSERTION = 1,
 
-            SINGLE_DELETION,
-            MASS_DELETION,
+            SINGLE_DELETION = 2,
+            MASS_DELETION = 3,
 
-            NONE
+            NONE = 4,
         };
 
         /*
@@ -214,6 +220,7 @@ class Textbox: public Element
             {}
         };
 
+        const size_t HISTORY_LIMIT = 100;
         void appendHistory(HistoryElement n_element);
         std::vector<HistoryElement> history;
         std::vector<HistoryElement> undoHistory;

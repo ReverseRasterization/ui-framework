@@ -382,9 +382,9 @@ bool Textbox::containsRestriction(Restriction restriction)
 
 void Textbox::appendHistory(Textbox::HistoryElement n_element)
 {
-    if (history.size() > 100)
+    if (history.size() > HISTORY_LIMIT)
     {
-        history.clear();
+        history.erase(history.begin(), history.begin() + 10);
     }
 
     undoHistory.clear();
@@ -450,7 +450,7 @@ void Textbox::redo()
         focusPosition = elm.index + 1;
     }else if (elm.type == MASS_INSERTION)
     {
-        m_textContents.erase(elm.index, elm.index + elm.string.size());
+        m_textContents.erase(elm.index, elm.string.size());
         history.push_back(HistoryElement(MASS_DELETION, elm.index, elm.string));
 
         focusPosition = elm.index;
@@ -518,7 +518,8 @@ Textbox::Textbox
             TextAlignment text_alignment,
             sf::Color fill_color, 
             sf::Color outline_color,
-            float outline_ratio
+            float outline_ratio,
+            bool character_masking
 ):           
     m_text(*font, text, 0),
     m_font(font),
@@ -529,7 +530,8 @@ Textbox::Textbox
     m_outlineRatio(outline_ratio),
     m_paddingRatio(padding_ratio),
     m_textAlignment(text_alignment),
-    focusPosition(text.size())
+    focusPosition(text.size()),
+    masking(character_masking)
 {
     // Set the colors of everything
     m_background.setFillColor(backgroundColor);
@@ -664,6 +666,11 @@ void Textbox::clickOff()
     setString(m_textContents);
 }
 
+/*
+    Issues:
+
+
+*/
 void Textbox::handleKey(char32_t character, bool redo)
 {
     /*
@@ -706,7 +713,7 @@ void Textbox::handleKey(char32_t character, bool redo)
     {
         if (highlighted)
         {
-            appendHistory(HistoryElement(MASS_DELETION, highlight_start, m_textContents.substr(highlight_start, highlight_start-highlight_end)));
+            appendHistory(HistoryElement(MASS_DELETION, highlight_start, m_textContents.substr(highlight_start, (highlight_end - highlight_start) + 1)));
 
             m_textContents.erase(highlight_start, highlight_end-highlight_start + 1);
             focusPosition = highlight_start;
@@ -725,17 +732,19 @@ void Textbox::handleKey(char32_t character, bool redo)
         return;
     }
 
-    if (character == DELETE)
+    if (character == DELETE) 
     {
         if (highlighted)
         {
-            m_textContents.erase(highlight_start, highlight_end-highlight_start + 1);
+            appendHistory(HistoryElement(MASS_DELETION, highlight_start, m_textContents.substr(highlight_start, (highlight_end - highlight_start) + 1)));
+
+            m_textContents.erase(highlight_start, (highlight_end-highlight_start) + 1);
             focusPosition = highlight_start;
 
             highlighted = false;
-        }
-        if (focusPosition < m_textContents.size())
+        }else if (focusPosition < m_textContents.size())
         {
+            appendHistory(HistoryElement(SINGLE_DELETION, focusPosition, m_textContents[focusPosition]));
             m_textContents.erase(focusPosition, 1);
         }
 
@@ -749,7 +758,7 @@ void Textbox::handleKey(char32_t character, bool redo)
         if (!highlighted)
             return;
         
-        clip::set_text(m_textContents.substr(highlight_start, highlight_start-highlight_end));
+        clip::set_text(m_textContents.substr(highlight_start, (highlight_end-highlight_start)+1));
 
         return;
     }
@@ -768,11 +777,11 @@ void Textbox::handleKey(char32_t character, bool redo)
         if (!highlighted)
             return;
 
-        bool success = clip::set_text(m_textContents.substr(highlight_start, highlight_start-highlight_end));
+        bool success = clip::set_text(m_textContents.substr(highlight_start, (highlight_end-highlight_start)+1));
 
         if (success)
         {
-            appendHistory(HistoryElement(HistoryType::MASS_DELETION, highlight_start, m_textContents.substr(highlight_start, highlight_end-highlight_start))); // todo: test this
+            appendHistory(HistoryElement(HistoryType::MASS_DELETION, highlight_start, m_textContents.substr(highlight_start, (highlight_end-highlight_start)+1))); // todo: test this
             m_textContents.erase(highlight_start, highlight_end-highlight_start + 1);
             focusPosition = highlight_start;
 
@@ -803,13 +812,13 @@ void Textbox::handleKey(char32_t character, bool redo)
 
     if (highlighted)
     {
-        appendHistory(HistoryElement(MASS_DELETION, highlight_start, m_textContents.substr(highlight_start, highlight_end-highlight_start))); // for content that was deleted
+        appendHistory(HistoryElement(MASS_DELETION, highlight_start, m_textContents.substr(highlight_start, (highlight_end-highlight_start) + 1))); // for content that was deleted
         appendHistory(HistoryElement(CHAR_INSERTION, highlight_start, character)); // for the character that'll be added
 
         m_textContents.erase(highlight_start, highlight_end-highlight_start + 1);
         m_textContents.insert(highlight_start, 1, character);
 
-        focusPosition = highlight_start;
+        focusPosition = highlight_start + 1;
         highlighted = false;
     }else {
         appendHistory(HistoryElement(CHAR_INSERTION, focusPosition, character));
@@ -818,8 +827,6 @@ void Textbox::handleKey(char32_t character, bool redo)
         focusPosition++;
     }
 
-    std::cout << "History Size: " << history.size() << '\n';
-    std::cout << "Undo History Size: " << undoHistory.size() << '\n';
     setString(m_textContents);
 }
 

@@ -4,10 +4,9 @@
 
         TEXTBOXES: 
 
-            Add undo & redo support
             Add support for hidden characters
 
-            Fix issues where characters that go under the baseline (ie. g, y, etc. throw off the positioning of the text)
+            Fix issues where characters that go under the baseline (ie. g, y, etc.) throw off the positioning of the text
             Fix highlighting where it'll highlight above the characters (ts pmo bro)
             Fix the tail being THICC whenever the textbox is wide
 
@@ -27,6 +26,12 @@
 */
 
 #include <iostream>
+#include <random>
+#include <stack>
+#include <string>
+#include <vector>
+#include <cassert>
+#include <chrono>
 
 #include <SFML/Graphics.hpp>
 
@@ -77,6 +82,90 @@ struct iElement
 
 iElement getInteractiveFromPosition(sf::Vector2f pos, Frame& active_frame);
 
+std::string generateRandomString(size_t len) {
+    static const std::string charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ";
+    static std::mt19937 rng(std::random_device{}());
+    std::uniform_int_distribution<> dist(0, charset.size() - 1);
+
+    std::string result;
+    result.reserve(len);
+
+    for (size_t i = 0; i < len; ++i) {
+        result += charset[dist(rng)];
+    }
+
+    return result;
+}
+
+void simulateStressTest(Textbox& textbox, int iterations = 5000) {
+    std::string expected;
+    std::stack<std::string> undoStack;
+    std::stack<std::string> redoStack;
+
+    std::mt19937 rng(std::random_device{}());
+    std::uniform_int_distribution<> opDist(0, 9); // 0-4 = insert/delete, 5-7 = undo, 8-9 = redo
+    std::uniform_int_distribution<> charDist(32, 126);
+    std::uniform_int_distribution<> strLenDist(1, 10);
+
+    for (int i = 0; i < iterations; i++) {
+        int op = opDist(rng);
+
+        if (op <= 2 && expected.size() < 500) { // insert random char
+            char c = static_cast<char>(charDist(rng));
+            std::cout << "inserting: " << c << '\n';
+
+            textbox.handleKey(c, false);
+            expected.insert(textbox.getFocusPosition() - 1, 1, c);
+            undoStack.push(expected);
+            while (!redoStack.empty()) redoStack.pop();
+        }
+        else if (op == 3 && !expected.empty()) { // backspace
+            int pos = textbox.getFocusPosition();
+            if (pos > 0) {
+                textbox.handleKey(8, false); // BACKSPACE
+                expected.erase(pos - 1, 1);
+                undoStack.push(expected);
+                while (!redoStack.empty()) redoStack.pop();
+            }
+        }
+        else if (op == 4) { // paste random string
+            std::string str = generateRandomString(strLenDist(rng));
+            textbox.appendString(str);
+            expected.insert(textbox.getFocusPosition() - str.size(), str);
+            undoStack.push(expected);
+            while (!redoStack.empty()) redoStack.pop();
+        }
+        else if (op == 5 && !undoStack.empty()) { // undo
+            redoStack.push(expected);
+            textbox.handleKey(26, false); // UNDO
+            undoStack.pop();
+            expected = undoStack.empty() ? "" : undoStack.top();
+        }
+        else if (op == 6 && !redoStack.empty()) { // redo
+            undoStack.push(expected);
+            textbox.handleKey(26, true); // REDO
+            expected = redoStack.top();
+            redoStack.pop();
+        }
+
+        // Validate after every operation
+        std::string actual = textbox.getString(); // or however you get the string
+        if (actual != expected) {
+            std::cerr << "❌ Mismatch at iteration " << i << "\n";
+            std::cerr << "Expected: \"" << expected << "\"\n";
+            std::cerr << "Actual:   \"" << actual << "\"\n";
+            exit(1);
+        }
+
+        // Optional: log progress
+        if (i % 500 == 0) {
+            std::cout << "[✓] " << i << " iterations passed\n";
+        }
+    }
+
+    std::cout << "\n✅ Stress test passed all " << iterations << " iterations.\n";
+}
+
 int main()
 {
     sf::RenderWindow window(sf::VideoMode({800, 800}), "UI Framework Test");
@@ -105,7 +194,9 @@ int main()
     tbox->setAlignment(Layout::Alignment::CENTER);
     tbox->setOutline(Outline(5.f, sf::Color::Red, tbox->getSize()));
     tbox->setPlaceholderText("Type here");
-    tbox->setRestrictions({Textbox::Restriction::NO_NUMBERS});
+    //tbox->setRestrictions({Textbox::Restriction::NO_NUMBERS});
+
+    simulateStressTest(*tbox);
 
     // Button* btn = new Button({50.f, 50.f}, Layout::Alignment::CENTER, Button::Text("CLEAR", &font, 4, sf::Color::White, sf::Color::Black, 0.2f));
     // btn->setCellOccupancy(1);
