@@ -4,11 +4,12 @@
 
         TEXTBOXES: 
 
-            Add support for hidden characters
-
             Fix issues where characters that go under the baseline (ie. g, y, etc.) throw off the positioning of the text
+                HTML textboxes allow enough space to fit under-baseline characters so that way when they come in it doesn't screw up the text
+
             Fix highlighting where it'll highlight above the characters (ts pmo bro)
             Fix the tail being THICC whenever the textbox is wide
+            Fix issue where mass deletion leaves behind god knows what and when you copy and paste it the program acts like it took magnesium citrate
 
             Add multiline support (mostly implemented just make it so that the user can make new lines in mutability) and an option to disable it
                 Implement text wrapping
@@ -82,93 +83,10 @@ struct iElement
 
 iElement getInteractiveFromPosition(sf::Vector2f pos, Frame& active_frame);
 
-std::string generateRandomString(size_t len) {
-    static const std::string charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ";
-    static std::mt19937 rng(std::random_device{}());
-    std::uniform_int_distribution<> dist(0, charset.size() - 1);
-
-    std::string result;
-    result.reserve(len);
-
-    for (size_t i = 0; i < len; ++i) {
-        result += charset[dist(rng)];
-    }
-
-    return result;
-}
-
-void simulateStressTest(Textbox& textbox, int iterations = 5000) {
-    std::string expected;
-    std::stack<std::string> undoStack;
-    std::stack<std::string> redoStack;
-
-    std::mt19937 rng(std::random_device{}());
-    std::uniform_int_distribution<> opDist(0, 9); // 0-4 = insert/delete, 5-7 = undo, 8-9 = redo
-    std::uniform_int_distribution<> charDist(32, 126);
-    std::uniform_int_distribution<> strLenDist(1, 10);
-
-    for (int i = 0; i < iterations; i++) {
-        int op = opDist(rng);
-
-        if (op <= 2 && expected.size() < 500) { // insert random char
-            char c = static_cast<char>(charDist(rng));
-            std::cout << "inserting: " << c << '\n';
-
-            textbox.handleKey(c, false);
-            expected.insert(textbox.getFocusPosition() - 1, 1, c);
-            undoStack.push(expected);
-            while (!redoStack.empty()) redoStack.pop();
-        }
-        else if (op == 3 && !expected.empty()) { // backspace
-            int pos = textbox.getFocusPosition();
-            if (pos > 0) {
-                textbox.handleKey(8, false); // BACKSPACE
-                expected.erase(pos - 1, 1);
-                undoStack.push(expected);
-                while (!redoStack.empty()) redoStack.pop();
-            }
-        }
-        else if (op == 4) { // paste random string
-            std::string str = generateRandomString(strLenDist(rng));
-            textbox.appendString(str);
-            expected.insert(textbox.getFocusPosition() - str.size(), str);
-            undoStack.push(expected);
-            while (!redoStack.empty()) redoStack.pop();
-        }
-        else if (op == 5 && !undoStack.empty()) { // undo
-            redoStack.push(expected);
-            textbox.handleKey(26, false); // UNDO
-            undoStack.pop();
-            expected = undoStack.empty() ? "" : undoStack.top();
-        }
-        else if (op == 6 && !redoStack.empty()) { // redo
-            undoStack.push(expected);
-            textbox.handleKey(26, true); // REDO
-            expected = redoStack.top();
-            redoStack.pop();
-        }
-
-        // Validate after every operation
-        std::string actual = textbox.getString(); // or however you get the string
-        if (actual != expected) {
-            std::cerr << "❌ Mismatch at iteration " << i << "\n";
-            std::cerr << "Expected: \"" << expected << "\"\n";
-            std::cerr << "Actual:   \"" << actual << "\"\n";
-            exit(1);
-        }
-
-        // Optional: log progress
-        if (i % 500 == 0) {
-            std::cout << "[✓] " << i << " iterations passed\n";
-        }
-    }
-
-    std::cout << "\n✅ Stress test passed all " << iterations << " iterations.\n";
-}
-
 int main()
 {
-    sf::RenderWindow window(sf::VideoMode({800, 800}), "UI Framework Test");
+    sf::RenderWindow window(sf::VideoMode({800, 800}), "UI Framework");
+    window.setPosition({0, 0});
 
     sf::Font font;
     if (!font.openFromFile("assets/font.ttf"))
@@ -184,37 +102,35 @@ int main()
         return -1;
     }
 
-    Frame frame(&window, sf::Color::White, GridLayout(1, 1));
+    Frame frame(&window, sf::Color::White, GridLayout(3, 1));
     frame.setSize({500.f, 300.f});
     frame.setOutline(Outline(10.f, sf::Color::Blue, {500.f, 300.f}));
     frame.setAlignment(Layout::Alignment::CENTER);
 
-    Textbox* tbox = new Textbox("", &font, {100.f, 100.f}, sf::Color::White, 0.04,Textbox::TextAlignment::CENTER, sf::Color::Black, sf::Color::Red, 0.05f);
-    tbox->enableMutability(1000, sf::Color::Green);
+    Textbox* tbox = new Textbox("", &font, {100.f, 25.f}, sf::Color::White, 0.04,Textbox::TextAlignment::CENTER, sf::Color::Black, sf::Color::Red, 0.05f);
+    tbox->enableMutability(1000, sf::Color::Green);\
     tbox->setAlignment(Layout::Alignment::CENTER);
     tbox->setOutline(Outline(5.f, sf::Color::Red, tbox->getSize()));
     tbox->setPlaceholderText("Type here");
-    //tbox->setRestrictions({Textbox::Restriction::NO_NUMBERS});
+    // tbox->maskCharacters(true, '*');
 
-    simulateStressTest(*tbox);
+    Button* btn = new Button({50.f, 50.f}, Layout::Alignment::CENTER, Button::Text("CLEAR", &font, 4, sf::Color::White, sf::Color::Black, 0.2f));
+    btn->setCellOccupancy(1);
+    btn->setOutline(Outline(5.f, sf::Color::Black, btn->getSize()));
+    btn->setBackgroundColor(sf::Color::Red); 
 
-    // Button* btn = new Button({50.f, 50.f}, Layout::Alignment::CENTER, Button::Text("CLEAR", &font, 4, sf::Color::White, sf::Color::Black, 0.2f));
-    // btn->setCellOccupancy(1);
-    // btn->setOutline(Outline(5.f, sf::Color::Black, btn->getSize()));
-    // btn->setBackgroundColor(sf::Color::Red); 
-
-    // Image* img = new Image({50.f, 50.f}, Layout::Alignment::CENTER);
-    // img->setCellOccupancy(2);
-    // img->setImage(Image::TileTexture(&buttonSet, {64, 0}, {32, 32}));
-    // img->setOutline(Outline(5.f, sf::Color::Red, {50.f, 50.f}));
-
-    // btn->onClick = [&]() {
-    //     tbox->setString("");
-    // };
+    Image* img = new Image({50.f, 50.f}, Layout::Alignment::CENTER);
+    img->setCellOccupancy(2);
+    img->setImage(Image::TileTexture(&buttonSet, {64, 0}, {32, 32}));
+    img->setOutline(Outline(5.f, sf::Color::Red, {50.f, 50.f}));
+    
+    btn->onClick = [&]() {
+        tbox->setString("");
+    };
 
     frame.addChild(tbox);
-    // frame.addChild(btn);
-    // frame.addChild(img);
+    frame.addChild(btn);
+    frame.addChild(img);
 
     Textbox* currTextbox {nullptr};
     sf::Vector2f highlightStartPos = {-1.f, -1.f};
@@ -341,44 +257,6 @@ int main()
             }
 
         }
-
-
-        // if (currTextbox) {
-        //     sf::Vector2f pos = currTextbox->getPosition();
-        //     sf::Vector2f size = currTextbox->getSize();
-
-        //     // 🧪 Random highlight
-        //     sf::Vector2f start = {
-        //         pos.x + static_cast<float>(rand() % static_cast<int>(size.x)),
-        //         pos.y + static_cast<float>(rand() % static_cast<int>(size.y))
-        //     };
-
-        //     sf::Vector2f end = {
-        //         pos.x + static_cast<float>(rand() % static_cast<int>(size.x)),
-        //         pos.y + static_cast<float>(rand() % static_cast<int>(size.y))
-        //     };
-
-        //     currTextbox->highlight(start, end);
-
-        //     // 🧪 Random key input: a-z, space, or backspace
-        //     int keyType = rand() % 10;
-        //     char32_t c;
-        //     if (keyType < 7) {
-        //         c = U'a' + (rand() % 26); // Normal letters
-        //     } else if (keyType == 7) {
-        //         c = 32; // Space
-        //     } else {
-        //         c = 8; // Backspace
-        //     }
-
-        //     currTextbox->handleKey(c);
-
-        //     // 🧪 Random caret movement
-        //     int xShift = (rand() % 3) - 1; // -1, 0, or 1
-        //     int yShift = (rand() % 3) - 1; // up/down support
-
-        //     currTextbox->shiftFocus(xShift, yShift);
-        // }
 
         window.clear();
 

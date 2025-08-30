@@ -158,6 +158,7 @@ void Textbox::positionText()
 }
 
 void Textbox::displayText()
+
 {    
     const sf::Vector2f backgroundSize = m_background.getSize();
     const float xPadding = backgroundSize.x * m_paddingRatio;
@@ -170,16 +171,17 @@ void Textbox::displayText()
 
     std::string str;
 
-    if (selected)
+    if (!selected && m_textContents.empty() && isMutable)
     {
-        str = m_textContents;
+        str = m_placeholderText;
     }else {
-        if (m_textContents.empty() && isMutable)
+        if (masking)
         {
-            str = m_placeholderText;
+            str = std::string(m_textContents.length(), maskingChar);
         }else {
             str = m_textContents;
         }
+        
     }
 
     m_text.setString(str);
@@ -240,13 +242,12 @@ void Textbox::setTail()
     sf::Vector2f bgSize = m_background.getSize();
     sf::Vector2f bgPos = m_background.getPosition();
 
-
     float padding = bgSize.y * m_paddingRatio;
     float height = std::clamp(m_text.getCharacterSize() * 1.25f, 0.f, bgSize.y - (padding*2));
     tailRect.setSize({bgSize.x * 0.02f, height});
 
     sf::Vector2f charPos = m_text.findCharacterPos(focusPosition) - (sf::Vector2f) {m_text.getLetterSpacing(), 0.f};
-    charPos = {std::clamp(charPos.x, charPos.x, bgPos.x + bgSize.x - padding), charPos.y};
+    charPos = {std::clamp(charPos.x, bgPos.x + padding, bgPos.x + bgSize.x - padding), charPos.y};
 
     if (m_textContents.empty())
     {   
@@ -518,8 +519,7 @@ Textbox::Textbox
             TextAlignment text_alignment,
             sf::Color fill_color, 
             sf::Color outline_color,
-            float outline_ratio,
-            bool character_masking
+            float outline_ratio
 ):           
     m_text(*font, text, 0),
     m_font(font),
@@ -530,8 +530,7 @@ Textbox::Textbox
     m_outlineRatio(outline_ratio),
     m_paddingRatio(padding_ratio),
     m_textAlignment(text_alignment),
-    focusPosition(text.size()),
-    masking(character_masking)
+    focusPosition(text.size())
 {
     // Set the colors of everything
     m_background.setFillColor(backgroundColor);
@@ -666,11 +665,6 @@ void Textbox::clickOff()
     setString(m_textContents);
 }
 
-/*
-    Issues:
-
-
-*/
 void Textbox::handleKey(char32_t character, bool redo)
 {
     /*
@@ -868,6 +862,15 @@ void Textbox::setPlaceholderText(std::string placeholder_text)
 
     if (m_textContents.empty())
         togglePlaceholder(true);
+}
+
+void Textbox::maskCharacters(bool toggle, char mask_char)
+{
+    masking = toggle;
+
+    if (toggle){
+        maskingChar = mask_char;
+    }
 }
 
 void Textbox::shiftFocus(int horizontal_direction, int vertical_direction)

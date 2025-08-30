@@ -87,6 +87,8 @@ class Textbox: public Element
         void disableMutability();
         bool getMutable(){return isMutable;}
 
+        void maskCharacters(bool toggle = true, char mask_char = '*');
+
         void setString(std::string new_string);
         void appendString(std::string string);
         std::string getString(){return m_textContents;}
@@ -115,8 +117,7 @@ class Textbox: public Element
             TextAlignment text_alignment = TextAlignment::CENTER,
             sf::Color fill_color = sf::Color::Black, 
             sf::Color outline_color = sf::Color::Black,
-            float outline_ratio = 0.f, // relative to the character size
-            bool mask_characters = false
+            float outline_ratio = 0.f // relative to the character size
         );
 
     private:
@@ -152,6 +153,7 @@ class Textbox: public Element
         unsigned int highlight_end = 0;
 
         bool masking = false;
+        char maskingChar = '*';
 
         std::vector<Restriction> m_restrictions;
         bool isRestricted(char character);
