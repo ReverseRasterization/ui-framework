@@ -128,20 +128,8 @@ void Textbox::positionText()
 
     const sf::Vector2f bgPos = m_background.getPosition();
     const sf::Vector2f bgSize = m_background.getSize();
-    const float horizPadding = bgSize.x * m_paddingRatio;
-
-    // debugCells.clear();
-
-    // sf::CircleShape cell (5.f);
-    // cell.setOrigin(cell.getLocalBounds().getCenter());
-    
-    // cell.setPosition(globalBounds.position);
-    // cell.setFillColor(sf::Color::Blue);
-    // debugCells.push_back(cell);
-
-    // cell.setPosition(globalBounds.position + globalBounds.size);
-    // cell.setFillColor(sf::Color::Green);
-    // debugCells.push_back(cell);
+    const float horizPadding = bgSize.x * m_paddingRatio.x;
+    const float vertPadding = bgSize.y * m_paddingRatio.y;
 
     if (m_textAlignment == TextAlignment::LEFT)
     {
@@ -161,8 +149,8 @@ void Textbox::displayText()
 
 {    
     const sf::Vector2f backgroundSize = m_background.getSize();
-    const float xPadding = backgroundSize.x * m_paddingRatio;
-    const float yPadding = backgroundSize.y * m_paddingRatio;
+    const float xPadding = backgroundSize.x * m_paddingRatio.x;
+    const float yPadding = backgroundSize.y * m_paddingRatio.y;
     float maxFontSize = backgroundSize.y - (yPadding * 2);
 
     m_text.setCharacterSize(maxFontSize);
@@ -217,6 +205,8 @@ void Textbox::displayText()
 
     positionText();
 
+    std::cout << "Character Size: " << m_text.getCharacterSize() << "\n\n";
+
     if (highlighted){ highlight(highlight_start, highlight_end); }
 
     if (selected)
@@ -242,7 +232,7 @@ void Textbox::setTail()
     sf::Vector2f bgSize = m_background.getSize();
     sf::Vector2f bgPos = m_background.getPosition();
 
-    float padding = bgSize.y * m_paddingRatio;
+    float padding = bgSize.y * m_paddingRatio.y;
     float height = std::clamp(m_text.getCharacterSize() * 1.25f, 0.f, bgSize.y - (padding*2));
     tailRect.setSize({bgSize.x * 0.02f, height});
 
@@ -515,7 +505,7 @@ Textbox::Textbox
             sf::Font* font, 
             sf::Vector2f size,
             sf::Color backgroundColor, 
-            float padding_ratio, 
+            sf::Vector2f padding_ratio, 
             TextAlignment text_alignment,
             sf::Color fill_color, 
             sf::Color outline_color,

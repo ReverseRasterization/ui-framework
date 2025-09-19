@@ -113,7 +113,7 @@ class Textbox: public Element
             sf::Font* font, 
             sf::Vector2f size = {100.f, 25.f},
             sf::Color backgroundColor = sf::Color::White, 
-            float padding_ratio = 0.04, 
+            sf::Vector2f padding_ratio = {0.05f,0.1f}, 
             TextAlignment text_alignment = TextAlignment::CENTER,
             sf::Color fill_color = sf::Color::Black, 
             sf::Color outline_color = sf::Color::Black,
@@ -158,7 +158,7 @@ class Textbox: public Element
         std::vector<Restriction> m_restrictions;
         bool isRestricted(char character);
 
-        float m_paddingRatio;
+        sf::Vector2f m_paddingRatio;
         TextAlignment m_textAlignment;
         int maxCharacters;
 

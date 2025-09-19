@@ -4,9 +4,6 @@
 
         TEXTBOXES: 
 
-            Fix issues where characters that go under the baseline (ie. g, y, etc.) throw off the positioning of the text
-                HTML textboxes allow enough space to fit under-baseline characters so that way when they come in it doesn't screw up the text
-
             Fix highlighting where it'll highlight above the characters (ts pmo bro)
             Fix the tail being THICC whenever the textbox is wide
             Fix issue where mass deletion leaves behind god knows what and when you copy and paste it the program acts like it took magnesium citrate
@@ -107,7 +104,7 @@ int main()
     frame.setOutline(Outline(10.f, sf::Color::Blue, {500.f, 300.f}));
     frame.setAlignment(Layout::Alignment::CENTER);
 
-    Textbox* tbox = new Textbox("", &font, {100.f, 25.f}, sf::Color::White, 0.04,Textbox::TextAlignment::CENTER, sf::Color::Black, sf::Color::Red, 0.05f);
+    Textbox* tbox = new Textbox("", &font, {100.f, 25.f}, sf::Color::White, {0.05f, 0.1f},Textbox::TextAlignment::LEFT, sf::Color::Black, sf::Color::Red, 0.05f);
     tbox->enableMutability(1000, sf::Color::Green);\
     tbox->setAlignment(Layout::Alignment::CENTER);
     tbox->setOutline(Outline(5.f, sf::Color::Red, tbox->getSize()));
